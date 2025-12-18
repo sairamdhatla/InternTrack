@@ -1,12 +1,22 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useApplications, ApplicationForm, ApplicationList } from '@/features/applications';
 import { Button } from '@/components/ui/button';
 import { Briefcase, LogOut } from 'lucide-react';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const {
+    applications,
+    loading: appsLoading,
+    createApplication,
+    updateApplication,
+    deleteApplication,
+    canAddApplication,
+    getRemainingSlots,
+  } = useApplications();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,19 +62,41 @@ export default function Index() {
       </header>
 
       {/* Main Content */}
-      <main className="container py-12">
-        <div className="text-center max-w-2xl mx-auto">
-          <h1 className="text-3xl font-display font-bold text-foreground mb-4">
-            Welcome, {user.email?.split('@')[0]}!
-          </h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            Your dashboard is ready. Next feature: Application Tracker.
-          </p>
-          <div className="p-8 rounded-xl border border-border bg-card animate-fade-in">
-            <p className="text-muted-foreground">
-              Application tracking will be implemented in the next step.
-            </p>
-          </div>
+      <main className="container py-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Add Application Section */}
+          <section className="p-6 rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Add Application
+              </h2>
+              <span className="text-sm text-muted-foreground">
+                {getRemainingSlots()} of 10 slots remaining
+              </span>
+            </div>
+            <ApplicationForm
+              onSubmit={createApplication}
+              disabled={!canAddApplication()}
+            />
+            {!canAddApplication() && (
+              <p className="mt-4 text-sm text-destructive">
+                You've reached the free limit of 10 applications.
+              </p>
+            )}
+          </section>
+
+          {/* Applications List Section */}
+          <section>
+            <h2 className="text-xl font-display font-semibold text-foreground mb-4">
+              Your Applications ({applications.length})
+            </h2>
+            <ApplicationList
+              applications={applications}
+              onUpdate={updateApplication}
+              onDelete={deleteApplication}
+              loading={appsLoading}
+            />
+          </section>
         </div>
       </main>
     </div>
