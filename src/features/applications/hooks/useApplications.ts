@@ -88,12 +88,30 @@ export function useApplications() {
       return { error: insertError };
     }
 
+    // Log creation event
+    await supabase.from('application_events').insert({
+      application_id: data.id,
+      user_id: user.id,
+      event_type: 'created',
+      new_status: data.status,
+    });
+
     setApplications(prev => [data, ...prev]);
     toast({ title: 'Success', description: 'Application added' });
     return { data };
   };
 
   const updateApplication = async (id: string, input: Partial<ApplicationInput>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: new Error('Not authenticated') };
+    }
+
+    // Get current application to check for status change
+    const currentApp = applications.find(app => app.id === id);
+    const oldStatus = currentApp?.status;
+    const newStatus = input.status;
+
     const { data, error: updateError } = await supabase
       .from('applications')
       .update(input)
@@ -106,12 +124,39 @@ export function useApplications() {
       return { error: updateError };
     }
 
+    // Log status change event if status changed
+    if (newStatus && oldStatus !== newStatus) {
+      await supabase.from('application_events').insert({
+        application_id: id,
+        user_id: user.id,
+        event_type: 'status_change',
+        old_status: oldStatus,
+        new_status: newStatus,
+      });
+    }
+
     setApplications(prev => prev.map(app => app.id === id ? data : app));
     toast({ title: 'Success', description: 'Application updated' });
     return { data };
   };
 
   const deleteApplication = async (id: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: new Error('Not authenticated') };
+    }
+
+    // Get current application for logging
+    const currentApp = applications.find(app => app.id === id);
+
+    // Log deletion event before deleting (cascade will remove this event too, but it's logged)
+    await supabase.from('application_events').insert({
+      application_id: id,
+      user_id: user.id,
+      event_type: 'deleted',
+      old_status: currentApp?.status,
+    });
+
     const { error: deleteError } = await supabase
       .from('applications')
       .delete()
