@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { canTransitionTo, getTransitionError, ApplicationStatus } from '../utils/statusStateMachine';
 
 const FREE_USER_LIMIT = 10;
 
@@ -21,6 +22,11 @@ export interface ApplicationInput {
   platform?: string;
   status?: string;
   applied_date?: string;
+}
+
+export interface StatusTransitionResult {
+  success: boolean;
+  error?: string;
 }
 
 export function useApplications() {
@@ -112,6 +118,15 @@ export function useApplications() {
     const oldStatus = currentApp?.status;
     const newStatus = input.status;
 
+    // Validate status transition if status is being changed
+    if (newStatus && oldStatus && newStatus !== oldStatus) {
+      const transitionError = getTransitionError(oldStatus, newStatus);
+      if (transitionError) {
+        toast({ title: 'Invalid Status Change', description: transitionError, variant: 'destructive' });
+        return { error: new Error(transitionError) };
+      }
+    }
+
     const { data, error: updateError } = await supabase
       .from('applications')
       .update(input)
@@ -138,6 +153,26 @@ export function useApplications() {
     setApplications(prev => prev.map(app => app.id === id ? data : app));
     toast({ title: 'Success', description: 'Application updated' });
     return { data };
+  };
+
+  const transitionStatus = async (id: string, newStatus: ApplicationStatus): Promise<StatusTransitionResult> => {
+    const currentApp = applications.find(app => app.id === id);
+    if (!currentApp) {
+      return { success: false, error: 'Application not found' };
+    }
+
+    if (!canTransitionTo(currentApp.status, newStatus)) {
+      const errorMsg = getTransitionError(currentApp.status, newStatus);
+      toast({ title: 'Invalid Transition', description: errorMsg || 'Cannot change status', variant: 'destructive' });
+      return { success: false, error: errorMsg || 'Invalid transition' };
+    }
+
+    const result = await updateApplication(id, { status: newStatus });
+    if (result.error) {
+      return { success: false, error: result.error instanceof Error ? result.error.message : 'Update failed' };
+    }
+
+    return { success: true };
   };
 
   const deleteApplication = async (id: string) => {
@@ -183,6 +218,7 @@ export function useApplications() {
     createApplication,
     updateApplication,
     deleteApplication,
+    transitionStatus,
     canAddApplication,
     getRemainingSlots,
     refresh: fetchApplications,
