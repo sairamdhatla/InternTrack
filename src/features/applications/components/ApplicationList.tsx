@@ -20,28 +20,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Application, ApplicationInput } from '../hooks/useApplications';
+import { Application, ApplicationInput, StatusTransitionResult } from '../hooks/useApplications';
 import { ApplicationForm } from './ApplicationForm';
+import { StatusTransitionButtons } from './StatusTransitionButtons';
+import { ApplicationStatus } from '../utils/statusStateMachine';
 
 interface ApplicationListProps {
   applications: Application[];
   onUpdate: (id: string, input: Partial<ApplicationInput>) => Promise<{ error?: Error | unknown }>;
   onDelete: (id: string) => Promise<{ error?: Error | unknown }>;
+  onTransitionStatus: (id: string, newStatus: ApplicationStatus) => Promise<StatusTransitionResult>;
   loading: boolean;
 }
 
 const statusColors: Record<string, string> = {
   Applied: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  Screening: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  OA: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   Interview: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   Offer: 'bg-green-500/20 text-green-400 border-green-500/30',
+  Accepted: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30',
   Rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
-  Withdrawn: 'bg-muted text-muted-foreground border-muted',
 };
 
-export function ApplicationList({ applications, onUpdate, onDelete, loading }: ApplicationListProps) {
+export function ApplicationList({ applications, onUpdate, onDelete, onTransitionStatus, loading }: ApplicationListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
+
+  const handleTransition = async (appId: string, newStatus: ApplicationStatus) => {
+    setTransitioningId(appId);
+    await onTransitionStatus(appId, newStatus);
+    setTransitioningId(null);
+  };
 
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Loading applications...</div>;
@@ -89,9 +99,16 @@ export function ApplicationList({ applications, onUpdate, onDelete, loading }: A
                 <TableCell>{app.role}</TableCell>
                 <TableCell className="text-muted-foreground">{app.platform || '-'}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={statusColors[app.status] || ''}>
-                    {app.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={statusColors[app.status] || ''}>
+                      {app.status}
+                    </Badge>
+                    <StatusTransitionButtons
+                      currentStatus={app.status}
+                      onTransition={(newStatus) => handleTransition(app.id, newStatus)}
+                      disabled={transitioningId === app.id}
+                    />
+                  </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(app.applied_date).toLocaleDateString()}

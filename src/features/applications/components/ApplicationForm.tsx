@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Application, ApplicationInput } from '../hooks/useApplications';
-
-const STATUS_OPTIONS = ['Applied', 'Screening', 'Interview', 'Offer', 'Rejected', 'Withdrawn'];
 
 interface ApplicationFormProps {
   onSubmit: (input: ApplicationInput) => Promise<{ error?: Error | unknown }>;
@@ -18,12 +15,13 @@ export function ApplicationForm({ onSubmit, initialData, onCancel, disabled }: A
   const [company, setCompany] = useState(initialData?.company || '');
   const [role, setRole] = useState(initialData?.role || '');
   const [platform, setPlatform] = useState(initialData?.platform || '');
-  const [status, setStatus] = useState(initialData?.status || 'Applied');
   const [appliedDate, setAppliedDate] = useState(
     initialData?.applied_date || new Date().toISOString().split('T')[0]
   );
   const [submitting, setSubmitting] = useState(false);
 
+  // New applications always start with 'Applied' status
+  // Status changes are handled via the status transition buttons
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company.trim() || !role.trim()) return;
@@ -33,7 +31,8 @@ export function ApplicationForm({ onSubmit, initialData, onCancel, disabled }: A
       company: company.trim(),
       role: role.trim(),
       platform: platform.trim() || undefined,
-      status,
+      // Only set status for new applications, not for edits (status changes via transition buttons)
+      ...(initialData ? {} : { status: 'Applied' }),
       applied_date: appliedDate,
     });
     setSubmitting(false);
@@ -42,7 +41,6 @@ export function ApplicationForm({ onSubmit, initialData, onCancel, disabled }: A
       setCompany('');
       setRole('');
       setPlatform('');
-      setStatus('Applied');
       setAppliedDate(new Date().toISOString().split('T')[0]);
     }
   };
@@ -82,19 +80,14 @@ export function ApplicationForm({ onSubmit, initialData, onCancel, disabled }: A
             disabled={disabled || submitting}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={setStatus} disabled={disabled || submitting}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {initialData && (
+          <div className="space-y-2">
+            <Label>Current Status</Label>
+            <p className="text-sm text-muted-foreground py-2">
+              {initialData.status} <span className="text-xs">(change via status buttons in the table)</span>
+            </p>
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="applied_date">Applied Date</Label>
           <Input

@@ -14,6 +14,7 @@ export default function Index() {
     createApplication,
     updateApplication,
     deleteApplication,
+    transitionStatus,
     canAddApplication,
     getRemainingSlots,
   } = useApplications();
@@ -94,6 +95,7 @@ export default function Index() {
               applications={applications}
               onUpdate={updateApplication}
               onDelete={deleteApplication}
+              onTransitionStatus={transitionStatus}
               loading={appsLoading}
             />
           </section>
