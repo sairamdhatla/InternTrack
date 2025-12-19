@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useApplications, ApplicationForm, ApplicationList } from '@/features/applications';
+import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics } from '@/features/applications';
 import { Button } from '@/components/ui/button';
-import { Briefcase, LogOut } from 'lucide-react';
+import { Briefcase, LogOut, BarChart3 } from 'lucide-react';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -65,6 +65,17 @@ export default function Index() {
       {/* Main Content */}
       <main className="container py-8">
         <div className="max-w-4xl mx-auto space-y-8">
+          {/* Analytics Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Analytics
+              </h2>
+            </div>
+            <ApplicationAnalytics />
+          </section>
+
           {/* Add Application Section */}
           <section className="p-6 rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between mb-4">
