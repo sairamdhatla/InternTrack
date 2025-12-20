@@ -3,6 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
 export interface ApplicationFile {
   id: string;
   application_id: string;
@@ -12,6 +21,29 @@ export interface ApplicationFile {
   file_type: string | null;
   file_size: number | null;
   created_at: string;
+}
+
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export function validateFile(file: File): FileValidationResult {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  if (!extension || !ALLOWED_EXTENSIONS.includes(extension)) {
+    return { valid: false, error: 'Only PDF, DOC, and DOCX files are allowed' };
+  }
+  
+  if (!ALLOWED_FILE_TYPES.includes(file.type) && file.type !== '') {
+    return { valid: false, error: 'Invalid file type. Only PDF, DOC, and DOCX are supported' };
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: 'File size exceeds 5 MB limit' };
+  }
+  
+  return { valid: true };
 }
 
 export function useApplicationFiles(applicationId: string, userId: string | undefined) {
