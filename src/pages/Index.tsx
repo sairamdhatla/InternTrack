@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics } from '@/features/applications';
+import { NotificationList } from '@/features/notifications';
 import { Button } from '@/components/ui/button';
-import { Briefcase, LogOut, BarChart3 } from 'lucide-react';
+import { Briefcase, LogOut, BarChart3, Bell } from 'lucide-react';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -95,6 +96,17 @@ export default function Index() {
                 You've reached the free limit of 10 applications.
               </p>
             )}
+          </section>
+
+          {/* Notifications Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Notifications
+              </h2>
+            </div>
+            <NotificationList userId={user?.id} />
           </section>
 
           {/* Applications List Section */}
