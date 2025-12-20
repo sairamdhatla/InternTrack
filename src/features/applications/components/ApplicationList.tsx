@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -23,10 +23,12 @@ import {
 import { Application, ApplicationInput, StatusTransitionResult } from '../hooks/useApplications';
 import { ApplicationForm } from './ApplicationForm';
 import { StatusTransitionButtons } from './StatusTransitionButtons';
+import { ApplicationFiles } from './ApplicationFiles';
 import { ApplicationStatus } from '../utils/statusStateMachine';
 
 interface ApplicationListProps {
   applications: Application[];
+  userId: string | undefined;
   onUpdate: (id: string, input: Partial<ApplicationInput>) => Promise<{ error?: Error | unknown }>;
   onDelete: (id: string) => Promise<{ error?: Error | unknown }>;
   onTransitionStatus: (id: string, newStatus: ApplicationStatus) => Promise<StatusTransitionResult>;
@@ -42,10 +44,11 @@ const statusColors: Record<string, string> = {
   Rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
 
-export function ApplicationList({ applications, onUpdate, onDelete, onTransitionStatus, loading }: ApplicationListProps) {
+export function ApplicationList({ applications, userId, onUpdate, onDelete, onTransitionStatus, loading }: ApplicationListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [transitioningId, setTransitioningId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleTransition = async (appId: string, newStatus: ApplicationStatus) => {
     setTransitioningId(appId);
@@ -94,45 +97,65 @@ export function ApplicationList({ applications, onUpdate, onDelete, onTransition
           </TableHeader>
           <TableBody>
             {applications.map((app) => (
-              <TableRow key={app.id}>
-                <TableCell className="font-medium">{app.company}</TableCell>
-                <TableCell>{app.role}</TableCell>
-                <TableCell className="text-muted-foreground">{app.platform || '-'}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={statusColors[app.status] || ''}>
-                      {app.status}
-                    </Badge>
-                    <StatusTransitionButtons
-                      currentStatus={app.status}
-                      onTransition={(newStatus) => handleTransition(app.id, newStatus)}
-                      disabled={transitioningId === app.id}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(app.applied_date).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingId(app.id)}
-                      disabled={editingId === app.id}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteId(app.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <>
+                <TableRow key={app.id}>
+                  <TableCell className="font-medium">{app.company}</TableCell>
+                  <TableCell>{app.role}</TableCell>
+                  <TableCell className="text-muted-foreground">{app.platform || '-'}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={statusColors[app.status] || ''}>
+                        {app.status}
+                      </Badge>
+                      <StatusTransitionButtons
+                        currentStatus={app.status}
+                        onTransition={(newStatus) => handleTransition(app.id, newStatus)}
+                        disabled={transitioningId === app.id}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(app.applied_date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
+                      >
+                        {expandedId === app.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingId(app.id)}
+                        disabled={editingId === app.id}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteId(app.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {expandedId === app.id && (
+                  <TableRow key={`${app.id}-files`}>
+                    <TableCell colSpan={6} className="bg-muted/30 p-4">
+                      <ApplicationFiles applicationId={app.id} userId={userId} />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
             ))}
           </TableBody>
         </Table>

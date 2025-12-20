@@ -104,6 +104,7 @@ export default function Index() {
             </h2>
             <ApplicationList
               applications={applications}
+              userId={user?.id}
               onUpdate={updateApplication}
               onDelete={deleteApplication}
               onTransitionStatus={transitionStatus}
