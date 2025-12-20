@@ -1,0 +1,205 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const MAX_RETRIES = 3;
+const INACTIVITY_DAYS = 7;
+
+interface JobResult {
+  success: boolean;
+  message: string;
+  retryCount?: number;
+}
+
+async function processInterviewReminders(supabase: any): Promise<JobResult> {
+  console.log('Processing interview reminders...');
+  
+  try {
+    // Find applications with Interview status that don't have a recent reminder
+    const { data: interviewApps, error: fetchError } = await supabase
+      .from('applications')
+      .select('id, user_id, company, role')
+      .eq('status', 'Interview');
+
+    if (fetchError) {
+      console.error('Error fetching interview applications:', fetchError);
+      return { success: false, message: fetchError.message };
+    }
+
+    if (!interviewApps || interviewApps.length === 0) {
+      console.log('No interview applications found');
+      return { success: true, message: 'No interview applications to process' };
+    }
+
+    let notificationsCreated = 0;
+
+    for (const app of interviewApps) {
+      // Check if a reminder was already sent in the last 24 hours
+      const { data: existingNotification } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('application_id', app.id)
+        .eq('type', 'interview_reminder')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .maybeSingle();
+
+      if (!existingNotification) {
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: app.user_id,
+            application_id: app.id,
+            type: 'interview_reminder',
+            message: `Reminder: You have an interview scheduled for ${app.role} at ${app.company}`,
+          });
+
+        if (insertError) {
+          console.error('Error inserting notification:', insertError);
+        } else {
+          notificationsCreated++;
+        }
+      }
+    }
+
+    console.log(`Created ${notificationsCreated} interview reminders`);
+    return { success: true, message: `Created ${notificationsCreated} interview reminders` };
+  } catch (error) {
+    console.error('Interview reminder processing error:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
+async function processInactivityAlerts(supabase: any): Promise<JobResult> {
+  console.log('Processing inactivity alerts...');
+  
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - INACTIVITY_DAYS);
+
+    // Find applications with no status change in X days
+    const { data: inactiveApps, error: fetchError } = await supabase
+      .from('applications')
+      .select('id, user_id, company, role, updated_at')
+      .lt('updated_at', cutoffDate.toISOString())
+      .not('status', 'in', '("Rejected","Offer Accepted","Offer Declined","Withdrawn")');
+
+    if (fetchError) {
+      console.error('Error fetching inactive applications:', fetchError);
+      return { success: false, message: fetchError.message };
+    }
+
+    if (!inactiveApps || inactiveApps.length === 0) {
+      console.log('No inactive applications found');
+      return { success: true, message: 'No inactive applications to process' };
+    }
+
+    let notificationsCreated = 0;
+
+    for (const app of inactiveApps) {
+      // Check if an inactivity alert was already sent in the last 7 days
+      const { data: existingNotification } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('application_id', app.id)
+        .eq('type', 'inactivity_alert')
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .maybeSingle();
+
+      if (!existingNotification) {
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: app.user_id,
+            application_id: app.id,
+            type: 'inactivity_alert',
+            message: `No updates for ${INACTIVITY_DAYS} days on your ${app.role} application at ${app.company}`,
+          });
+
+        if (insertError) {
+          console.error('Error inserting notification:', insertError);
+        } else {
+          notificationsCreated++;
+        }
+      }
+    }
+
+    console.log(`Created ${notificationsCreated} inactivity alerts`);
+    return { success: true, message: `Created ${notificationsCreated} inactivity alerts` };
+  } catch (error) {
+    console.error('Inactivity alert processing error:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
+async function runWithRetry(
+  fn: (supabase: any) => Promise<JobResult>,
+  supabase: any,
+  jobName: string
+): Promise<JobResult> {
+  let lastError: string = '';
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    console.log(`${jobName}: Attempt ${attempt}/${MAX_RETRIES}`);
+    
+    const result = await fn(supabase);
+    
+    if (result.success) {
+      return { ...result, retryCount: attempt };
+    }
+    
+    lastError = result.message;
+    console.log(`${jobName}: Failed attempt ${attempt}, ${MAX_RETRIES - attempt} retries remaining`);
+    
+    if (attempt < MAX_RETRIES) {
+      // Exponential backoff: 1s, 2s, 4s
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+    }
+  }
+  
+  return { success: false, message: `Failed after ${MAX_RETRIES} attempts: ${lastError}`, retryCount: MAX_RETRIES };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    console.log('Starting notification processing jobs...');
+
+    // Run both jobs
+    const [interviewResult, inactivityResult] = await Promise.all([
+      runWithRetry(processInterviewReminders, supabase, 'InterviewReminders'),
+      runWithRetry(processInactivityAlerts, supabase, 'InactivityAlerts'),
+    ]);
+
+    const response = {
+      timestamp: new Date().toISOString(),
+      jobs: {
+        interviewReminders: interviewResult,
+        inactivityAlerts: inactivityResult,
+      },
+    };
+
+    console.log('Notification processing complete:', response);
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error in process-notifications:', error);
+    return new Response(
+      JSON.stringify({ error: String(error) }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
