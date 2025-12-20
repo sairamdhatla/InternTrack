@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { Upload, Download, Trash2, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useApplicationFiles, ApplicationFile } from '../hooks/useApplicationFiles';
+import { useApplicationFiles, ApplicationFile, validateFile } from '../hooks/useApplicationFiles';
+import { useToast } from '@/hooks/use-toast';
 
 interface ApplicationFilesProps {
   applicationId: string;
@@ -17,11 +18,22 @@ function formatFileSize(bytes: number | null): string {
 
 export function ApplicationFiles({ applicationId, userId }: ApplicationFilesProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   const { files, isLoading, uploading, uploadFile, deleteFile, downloadFile } = useApplicationFiles(applicationId, userId);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast({
+          title: 'Invalid file',
+          description: validation.error,
+          variant: 'destructive',
+        });
+        e.target.value = '';
+        return;
+      }
       uploadFile(file);
       e.target.value = '';
     }
@@ -49,9 +61,10 @@ export function ApplicationFiles({ applicationId, userId }: ApplicationFilesProp
           type="file"
           className="hidden"
           onChange={handleFileSelect}
-          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+          accept=".pdf,.doc,.docx"
         />
       </div>
+      <p className="text-xs text-muted-foreground">PDF, DOC, DOCX only. Max 5 MB.</p>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
