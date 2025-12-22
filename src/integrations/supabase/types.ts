@@ -167,6 +167,45 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"] | null
+          created_at: string
+          end_date: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          razorpay_subscription_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"] | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          razorpay_subscription_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"] | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          razorpay_subscription_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -175,7 +214,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      billing_cycle: "monthly" | "yearly"
+      subscription_plan: "free" | "pro"
+      subscription_status: "active" | "cancelled" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -302,6 +343,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      billing_cycle: ["monthly", "yearly"],
+      subscription_plan: ["free", "pro"],
+      subscription_status: ["active", "cancelled", "expired"],
+    },
   },
 } as const
