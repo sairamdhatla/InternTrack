@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics } from '@/features/applications';
+import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { Button } from '@/components/ui/button';
 import { Briefcase, LogOut, BarChart3, Bell } from 'lucide-react';
@@ -19,6 +19,8 @@ export default function Index() {
     canAddApplication,
     getRemainingSlots,
   } = useApplications();
+
+  const { filters, setFilters, filteredApplications, platforms } = useApplicationFilters(applications);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -112,10 +114,15 @@ export default function Index() {
           {/* Applications List Section */}
           <section>
             <h2 className="text-xl font-display font-semibold text-foreground mb-4">
-              Your Applications ({applications.length})
+              Your Applications ({filteredApplications.length}{applications.length !== filteredApplications.length && ` of ${applications.length}`})
             </h2>
+            <ApplicationFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              platforms={platforms}
+            />
             <ApplicationList
-              applications={applications}
+              applications={filteredApplications}
               userId={user?.id}
               onUpdate={updateApplication}
               onDelete={deleteApplication}
