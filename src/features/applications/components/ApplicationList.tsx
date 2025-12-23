@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -25,6 +26,10 @@ import { ApplicationForm } from './ApplicationForm';
 import { StatusTransitionButtons } from './StatusTransitionButtons';
 import { ApplicationFiles } from './ApplicationFiles';
 import { ApplicationStatus } from '../utils/statusStateMachine';
+import { ApplicationTimeline } from './ApplicationTimeline';
+import { AddNoteForm } from './AddNoteForm';
+import { useApplicationNotes } from '../hooks/useApplicationNotes';
+import { useApplicationEvents } from '../hooks/useApplicationEvents';
 
 interface ApplicationListProps {
   applications: Application[];
@@ -43,6 +48,31 @@ const statusColors: Record<string, string> = {
   Accepted: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30',
   Rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
+
+// Extracted component for expanded content to use hooks
+function ExpandedApplicationContent({ applicationId, userId }: { applicationId: string; userId: string | undefined }) {
+  const { notes, addNote } = useApplicationNotes(applicationId);
+  const { events } = useApplicationEvents(applicationId);
+
+  return (
+    <Tabs defaultValue="timeline" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        <TabsTrigger value="files">Files</TabsTrigger>
+      </TabsList>
+      <TabsContent value="timeline" className="space-y-4">
+        <AddNoteForm onSubmit={addNote} />
+        <div className="border-t border-border pt-4">
+          <h4 className="text-sm font-medium mb-3">Activity</h4>
+          <ApplicationTimeline events={events} notes={notes} />
+        </div>
+      </TabsContent>
+      <TabsContent value="files">
+        <ApplicationFiles applicationId={applicationId} userId={userId} />
+      </TabsContent>
+    </Tabs>
+  );
+}
 
 export function ApplicationList({ applications, userId, onUpdate, onDelete, onTransitionStatus, loading }: ApplicationListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -149,9 +179,9 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
                   </TableCell>
                 </TableRow>
                 {expandedId === app.id && (
-                  <TableRow key={`${app.id}-files`}>
+                  <TableRow key={`${app.id}-expanded`}>
                     <TableCell colSpan={6} className="bg-muted/30 p-4">
-                      <ApplicationFiles applicationId={app.id} userId={userId} />
+                      <ExpandedApplicationContent applicationId={app.id} userId={userId} />
                     </TableCell>
                   </TableRow>
                 )}
