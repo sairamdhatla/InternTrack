@@ -72,6 +72,79 @@ async function processInterviewReminders(supabase: any): Promise<JobResult> {
   }
 }
 
+async function processDeadlineReminders(supabase: any): Promise<JobResult> {
+  console.log('Processing deadline reminders...');
+  
+  try {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    // Find applications with deadlines today or tomorrow where reminder is enabled
+    const { data: deadlineApps, error: fetchError } = await supabase
+      .from('applications')
+      .select('id, user_id, company, role, deadline_date')
+      .eq('reminder_enabled', true)
+      .in('deadline_date', [todayStr, tomorrowStr]);
+
+    if (fetchError) {
+      console.error('Error fetching deadline applications:', fetchError);
+      return { success: false, message: fetchError.message };
+    }
+
+    if (!deadlineApps || deadlineApps.length === 0) {
+      console.log('No deadline applications found');
+      return { success: true, message: 'No deadline applications to process' };
+    }
+
+    let notificationsCreated = 0;
+
+    for (const app of deadlineApps) {
+      const isToday = app.deadline_date === todayStr;
+      const notificationType = isToday ? 'deadline_today' : 'deadline_tomorrow';
+      
+      // Check if a notification was already sent today for this application
+      const { data: existingNotification } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('application_id', app.id)
+        .eq('type', notificationType)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .maybeSingle();
+
+      if (!existingNotification) {
+        const message = isToday
+          ? `⚠️ Deadline today: ${app.company} – ${app.role}`
+          : `⏰ Application deadline tomorrow for ${app.company} – ${app.role}`;
+
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: app.user_id,
+            application_id: app.id,
+            type: notificationType,
+            message,
+          });
+
+        if (insertError) {
+          console.error('Error inserting deadline notification:', insertError);
+        } else {
+          notificationsCreated++;
+        }
+      }
+    }
+
+    console.log(`Created ${notificationsCreated} deadline reminders`);
+    return { success: true, message: `Created ${notificationsCreated} deadline reminders` };
+  } catch (error) {
+    console.error('Deadline reminder processing error:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
 async function processInactivityAlerts(supabase: any): Promise<JobResult> {
   console.log('Processing inactivity alerts...');
   
@@ -175,9 +248,10 @@ Deno.serve(async (req) => {
 
     console.log('Starting notification processing jobs...');
 
-    // Run both jobs
-    const [interviewResult, inactivityResult] = await Promise.all([
+    // Run all jobs
+    const [interviewResult, deadlineResult, inactivityResult] = await Promise.all([
       runWithRetry(processInterviewReminders, supabase, 'InterviewReminders'),
+      runWithRetry(processDeadlineReminders, supabase, 'DeadlineReminders'),
       runWithRetry(processInactivityAlerts, supabase, 'InactivityAlerts'),
     ]);
 
@@ -185,6 +259,7 @@ Deno.serve(async (req) => {
       timestamp: new Date().toISOString(),
       jobs: {
         interviewReminders: interviewResult,
+        deadlineReminders: deadlineResult,
         inactivityAlerts: inactivityResult,
       },
     };
