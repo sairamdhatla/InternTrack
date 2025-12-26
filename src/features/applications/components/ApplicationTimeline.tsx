@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { ArrowRight, StickyNote, Clock, Calendar, Bell, BellOff } from 'lucide-react';
+import { ArrowRight, StickyNote, Clock, Calendar, Bell, BellOff, Send, RotateCw } from 'lucide-react';
 import { ApplicationNote } from '../hooks/useApplicationNotes';
 
 interface ApplicationEvent {
@@ -36,6 +36,10 @@ function getEventIcon(eventType: string) {
       return <Bell className="h-4 w-4 text-green-500" />;
     case 'reminder_disabled':
       return <BellOff className="h-4 w-4 text-muted-foreground" />;
+    case 'follow_up_sent':
+      return <Send className="h-4 w-4 text-blue-500" />;
+    case 'next_follow_up_scheduled':
+      return <RotateCw className="h-4 w-4 text-primary" />;
     default:
       return <ArrowRight className="h-4 w-4 text-muted-foreground" />;
   }
@@ -53,6 +57,10 @@ function getEventMessage(event: TimelineItem): string {
       return 'Reminder enabled';
     case 'reminder_disabled':
       return 'Reminder disabled';
+    case 'follow_up_sent':
+      return event.newStatus ? `📩 Follow-up sent: ${event.newStatus}` : '📩 Follow-up sent';
+    case 'next_follow_up_scheduled':
+      return `🔁 Next follow-up scheduled for ${event.newStatus ? format(new Date(event.newStatus), 'MMM d, yyyy') : 'unknown date'}`;
     case 'status_change':
       if (event.oldStatus && event.newStatus) {
         return `Status changed from ${event.oldStatus} to ${event.newStatus}`;

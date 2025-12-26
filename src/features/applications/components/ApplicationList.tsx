@@ -35,6 +35,7 @@ import { ApplicationFiles } from './ApplicationFiles';
 import { ApplicationStatus } from '../utils/statusStateMachine';
 import { ApplicationTimeline } from './ApplicationTimeline';
 import { AddNoteForm } from './AddNoteForm';
+import { FollowUpSection } from './FollowUpSection';
 import { useApplicationNotes } from '../hooks/useApplicationNotes';
 import { useApplicationEvents } from '../hooks/useApplicationEvents';
 
@@ -104,6 +105,7 @@ function ExpandedApplicationContent({ applicationId, userId }: { applicationId: 
     <Tabs defaultValue="timeline" className="w-full">
       <TabsList className="mb-4">
         <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        <TabsTrigger value="follow-ups">Follow-ups</TabsTrigger>
         <TabsTrigger value="files">Files</TabsTrigger>
       </TabsList>
       <TabsContent value="timeline" className="space-y-4">
@@ -112,6 +114,9 @@ function ExpandedApplicationContent({ applicationId, userId }: { applicationId: 
           <h4 className="text-sm font-medium mb-3">Activity</h4>
           <ApplicationTimeline events={events} notes={notes} />
         </div>
+      </TabsContent>
+      <TabsContent value="follow-ups">
+        <FollowUpSection applicationId={applicationId} />
       </TabsContent>
       <TabsContent value="files">
         <ApplicationFiles applicationId={applicationId} userId={userId} />

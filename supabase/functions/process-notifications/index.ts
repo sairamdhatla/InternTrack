@@ -145,6 +145,75 @@ async function processDeadlineReminders(supabase: any): Promise<JobResult> {
   }
 }
 
+async function processFollowUpReminders(supabase: any): Promise<JobResult> {
+  console.log('Processing follow-up reminders...');
+  
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Find follow-ups with next_follow_up_date = today
+    const { data: followUps, error: fetchError } = await supabase
+      .from('follow_ups')
+      .select('id, user_id, application_id, next_follow_up_date')
+      .eq('next_follow_up_date', today);
+
+    if (fetchError) {
+      console.error('Error fetching follow-ups:', fetchError);
+      return { success: false, message: fetchError.message };
+    }
+
+    if (!followUps || followUps.length === 0) {
+      console.log('No follow-up reminders found');
+      return { success: true, message: 'No follow-up reminders to process' };
+    }
+
+    let notificationsCreated = 0;
+
+    for (const followUp of followUps) {
+      // Get application details
+      const { data: app } = await supabase
+        .from('applications')
+        .select('company, role')
+        .eq('id', followUp.application_id)
+        .single();
+
+      if (!app) continue;
+
+      // Check if a notification was already sent today for this follow-up
+      const { data: existingNotification } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('application_id', followUp.application_id)
+        .eq('type', 'follow_up_due')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .maybeSingle();
+
+      if (!existingNotification) {
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: followUp.user_id,
+            application_id: followUp.application_id,
+            type: 'follow_up_due',
+            message: `🔁 Follow-up due for ${app.company} – ${app.role}`,
+          });
+
+        if (insertError) {
+          console.error('Error inserting follow-up notification:', insertError);
+        } else {
+          notificationsCreated++;
+        }
+      }
+    }
+
+    console.log(`Created ${notificationsCreated} follow-up reminders`);
+    return { success: true, message: `Created ${notificationsCreated} follow-up reminders` };
+  } catch (error) {
+    console.error('Follow-up reminder processing error:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
 async function processInactivityAlerts(supabase: any): Promise<JobResult> {
   console.log('Processing inactivity alerts...');
   
@@ -249,9 +318,10 @@ Deno.serve(async (req) => {
     console.log('Starting notification processing jobs...');
 
     // Run all jobs
-    const [interviewResult, deadlineResult, inactivityResult] = await Promise.all([
+    const [interviewResult, deadlineResult, followUpResult, inactivityResult] = await Promise.all([
       runWithRetry(processInterviewReminders, supabase, 'InterviewReminders'),
       runWithRetry(processDeadlineReminders, supabase, 'DeadlineReminders'),
+      runWithRetry(processFollowUpReminders, supabase, 'FollowUpReminders'),
       runWithRetry(processInactivityAlerts, supabase, 'InactivityAlerts'),
     ]);
 
@@ -260,6 +330,7 @@ Deno.serve(async (req) => {
       jobs: {
         interviewReminders: interviewResult,
         deadlineReminders: deadlineResult,
+        followUpReminders: followUpResult,
         inactivityAlerts: inactivityResult,
       },
     };

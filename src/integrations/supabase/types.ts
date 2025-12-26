@@ -167,6 +167,44 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_ups: {
+        Row: {
+          application_id: string
+          created_at: string
+          followed_up_at: string
+          id: string
+          next_follow_up_date: string | null
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          followed_up_at?: string
+          id?: string
+          next_follow_up_date?: string | null
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          followed_up_at?: string
+          id?: string
+          next_follow_up_date?: string | null
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           application_id: string | null
