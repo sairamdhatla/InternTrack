@@ -4,9 +4,10 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters, WeeklyProgressCard, ExportButton } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { useSubscription } from '@/features/subscriptions';
+import { ProfileSettings } from '@/features/profile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, LogOut, BarChart3, Bell, Crown } from 'lucide-react';
+import { Briefcase, LogOut, BarChart3, Bell, Crown, User } from 'lucide-react';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -137,6 +138,17 @@ export default function Index() {
               </h2>
             </div>
             <NotificationList userId={user?.id} />
+          </section>
+
+          {/* Profile Settings Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <User className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Profile
+              </h2>
+            </div>
+            <ProfileSettings userId={user?.id} />
           </section>
 
           {/* Applications List Section */}

@@ -243,6 +243,33 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          public_profile_enabled: boolean
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          public_profile_enabled?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          public_profile_enabled?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_cycle: Database["public"]["Enums"]["billing_cycle"] | null
@@ -287,7 +314,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_profile_data: {
+        Args: { profile_username: string }
+        Returns: {
+          applications: Json
+          display_name: string
+          interviews: number
+          offers: number
+          total_applications: number
+        }[]
+      }
     }
     Enums: {
       billing_cycle: "monthly" | "yearly"
