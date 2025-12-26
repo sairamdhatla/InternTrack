@@ -29,7 +29,7 @@ export interface StatusTransitionResult {
   error?: string;
 }
 
-export function useApplications() {
+export function useApplications(isPro: boolean = false) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +54,12 @@ export function useApplications() {
   };
 
   const canAddApplication = () => {
+    if (isPro) return true;
     return applications.length < FREE_USER_LIMIT;
   };
 
   const getRemainingSlots = () => {
+    if (isPro) return Infinity;
     return Math.max(0, FREE_USER_LIMIT - applications.length);
   };
 
@@ -65,7 +67,7 @@ export function useApplications() {
     if (!canAddApplication()) {
       toast({
         title: 'Limit Reached',
-        description: `Free users can only track ${FREE_USER_LIMIT} applications.`,
+        description: `Free users can only track ${FREE_USER_LIMIT} applications. Upgrade to Pro for unlimited.`,
         variant: 'destructive',
       });
       return { error: new Error('Application limit reached') };

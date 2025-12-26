@@ -1,14 +1,17 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
+import { useSubscription } from '@/features/subscriptions';
 import { Button } from '@/components/ui/button';
-import { Briefcase, LogOut, BarChart3, Bell } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Briefcase, LogOut, BarChart3, Bell, Crown } from 'lucide-react';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { isPro, plan, isLoading: subLoading } = useSubscription();
   const {
     applications,
     loading: appsLoading,
@@ -18,7 +21,7 @@ export default function Index() {
     transitionStatus,
     canAddApplication,
     getRemainingSlots,
-  } = useApplications();
+  } = useApplications(isPro);
 
   const { filters, setFilters, filteredApplications, platforms } = useApplicationFilters(applications);
 
@@ -57,11 +60,24 @@ export default function Index() {
             <span className="text-lg font-display font-semibold text-foreground">
               InternTrack
             </span>
+            {isPro && (
+              <Badge variant="secondary" className="gap-1">
+                <Crown className="h-3 w-3" />
+                Pro
+              </Badge>
+            )}
           </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/pricing">
+                {isPro ? "Manage Plan" : "Upgrade"}
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -85,18 +101,25 @@ export default function Index() {
               <h2 className="text-xl font-display font-semibold text-foreground">
                 Add Application
               </h2>
-              <span className="text-sm text-muted-foreground">
-                {getRemainingSlots()} of 10 slots remaining
-              </span>
+              {!isPro && (
+                <span className="text-sm text-muted-foreground">
+                  {getRemainingSlots()} of 10 slots remaining
+                </span>
+              )}
             </div>
             <ApplicationForm
               onSubmit={createApplication}
               disabled={!canAddApplication()}
             />
-            {!canAddApplication() && (
-              <p className="mt-4 text-sm text-destructive">
-                You've reached the free limit of 10 applications.
-              </p>
+            {!canAddApplication() && !isPro && (
+              <div className="mt-4 flex items-center justify-between p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive">
+                  You've reached the free limit of 10 applications.
+                </p>
+                <Button size="sm" asChild>
+                  <Link to="/pricing">Upgrade to Pro</Link>
+                </Button>
+              </div>
             )}
           </section>
 
