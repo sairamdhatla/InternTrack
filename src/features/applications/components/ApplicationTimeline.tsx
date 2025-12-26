@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { ArrowRight, StickyNote, Clock } from 'lucide-react';
+import { ArrowRight, StickyNote, Clock, Calendar, Bell, BellOff } from 'lucide-react';
 import { ApplicationNote } from '../hooks/useApplicationNotes';
 
 interface ApplicationEvent {
@@ -14,6 +14,7 @@ interface ApplicationEvent {
 interface TimelineItem {
   id: string;
   type: 'event' | 'note';
+  eventType?: string;
   content: string;
   created_at: string;
   oldStatus?: string | null;
@@ -25,6 +26,45 @@ interface ApplicationTimelineProps {
   notes: ApplicationNote[];
 }
 
+function getEventIcon(eventType: string) {
+  switch (eventType) {
+    case 'deadline_set':
+    case 'deadline_updated':
+    case 'deadline_removed':
+      return <Calendar className="h-4 w-4 text-primary" />;
+    case 'reminder_enabled':
+      return <Bell className="h-4 w-4 text-green-500" />;
+    case 'reminder_disabled':
+      return <BellOff className="h-4 w-4 text-muted-foreground" />;
+    default:
+      return <ArrowRight className="h-4 w-4 text-muted-foreground" />;
+  }
+}
+
+function getEventMessage(event: TimelineItem): string {
+  switch (event.eventType) {
+    case 'deadline_set':
+      return `Deadline set for ${event.newStatus ? format(new Date(event.newStatus), 'MMM d, yyyy') : 'unknown date'}`;
+    case 'deadline_updated':
+      return `Deadline updated to ${event.newStatus ? format(new Date(event.newStatus), 'MMM d, yyyy') : 'unknown date'}`;
+    case 'deadline_removed':
+      return 'Deadline removed';
+    case 'reminder_enabled':
+      return 'Reminder enabled';
+    case 'reminder_disabled':
+      return 'Reminder disabled';
+    case 'status_change':
+      if (event.oldStatus && event.newStatus) {
+        return `Status changed from ${event.oldStatus} to ${event.newStatus}`;
+      }
+      return 'Status changed';
+    case 'created':
+      return `Application created with status ${event.newStatus || 'Applied'}`;
+    default:
+      return event.eventType || 'Unknown event';
+  }
+}
+
 export const ApplicationTimeline = ({ events, notes }: ApplicationTimelineProps) => {
   const timelineItems = useMemo(() => {
     const items: TimelineItem[] = [];
@@ -34,6 +74,7 @@ export const ApplicationTimeline = ({ events, notes }: ApplicationTimelineProps)
       items.push({
         id: event.id,
         type: 'event',
+        eventType: event.event_type,
         content: event.event_type,
         created_at: event.created_at,
         oldStatus: event.old_status,
@@ -80,22 +121,14 @@ export const ApplicationTimeline = ({ events, notes }: ApplicationTimelineProps)
             {item.type === 'note' ? (
               <StickyNote className="h-4 w-4 text-primary" />
             ) : (
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              getEventIcon(item.eventType || '')
             )}
           </div>
           <div className="flex-1 min-w-0">
             {item.type === 'note' ? (
               <p className="text-sm whitespace-pre-wrap break-words">{item.content}</p>
             ) : (
-              <p className="text-sm">
-                <span className="font-medium">Status changed</span>
-                {item.oldStatus && item.newStatus && (
-                  <span className="text-muted-foreground">
-                    {' '}from <span className="font-medium text-foreground">{item.oldStatus}</span> to{' '}
-                    <span className="font-medium text-foreground">{item.newStatus}</span>
-                  </span>
-                )}
-              </p>
+              <p className="text-sm">{getEventMessage(item)}</p>
             )}
             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />

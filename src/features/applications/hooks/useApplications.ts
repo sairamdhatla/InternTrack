@@ -12,6 +12,8 @@ export interface Application {
   platform: string | null;
   status: string;
   applied_date: string;
+  deadline_date: string | null;
+  reminder_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +24,8 @@ export interface ApplicationInput {
   platform?: string;
   status?: string;
   applied_date?: string;
+  deadline_date?: string;
+  reminder_enabled?: boolean;
 }
 
 export interface StatusTransitionResult {
@@ -87,6 +91,8 @@ export function useApplications(isPro: boolean = false) {
         platform: input.platform || null,
         status: input.status || 'Applied',
         applied_date: input.applied_date || new Date().toISOString().split('T')[0],
+        deadline_date: input.deadline_date || null,
+        reminder_enabled: input.reminder_enabled || false,
       })
       .select()
       .single();
@@ -104,6 +110,25 @@ export function useApplications(isPro: boolean = false) {
       new_status: data.status,
     });
 
+    // Log deadline set if provided
+    if (input.deadline_date) {
+      await supabase.from('application_events').insert({
+        application_id: data.id,
+        user_id: user.id,
+        event_type: 'deadline_set',
+        new_status: input.deadline_date,
+      });
+    }
+
+    // Log reminder enabled if set
+    if (input.reminder_enabled) {
+      await supabase.from('application_events').insert({
+        application_id: data.id,
+        user_id: user.id,
+        event_type: 'reminder_enabled',
+      });
+    }
+
     setApplications(prev => [data, ...prev]);
     toast({ title: 'Success', description: 'Application added' });
     return { data };
@@ -115,10 +140,14 @@ export function useApplications(isPro: boolean = false) {
       return { error: new Error('Not authenticated') };
     }
 
-    // Get current application to check for status change
+    // Get current application to check for changes
     const currentApp = applications.find(app => app.id === id);
     const oldStatus = currentApp?.status;
     const newStatus = input.status;
+    const oldDeadline = currentApp?.deadline_date;
+    const newDeadline = input.deadline_date;
+    const oldReminderEnabled = currentApp?.reminder_enabled;
+    const newReminderEnabled = input.reminder_enabled;
 
     // Validate status transition if status is being changed
     if (newStatus && oldStatus && newStatus !== oldStatus) {
@@ -149,6 +178,35 @@ export function useApplications(isPro: boolean = false) {
         event_type: 'status_change',
         old_status: oldStatus,
         new_status: newStatus,
+      });
+    }
+
+    // Log deadline changes
+    if (newDeadline !== undefined && newDeadline !== oldDeadline) {
+      if (newDeadline) {
+        await supabase.from('application_events').insert({
+          application_id: id,
+          user_id: user.id,
+          event_type: oldDeadline ? 'deadline_updated' : 'deadline_set',
+          old_status: oldDeadline || null,
+          new_status: newDeadline,
+        });
+      } else if (oldDeadline) {
+        await supabase.from('application_events').insert({
+          application_id: id,
+          user_id: user.id,
+          event_type: 'deadline_removed',
+          old_status: oldDeadline,
+        });
+      }
+    }
+
+    // Log reminder enabled/disabled
+    if (newReminderEnabled !== undefined && newReminderEnabled !== oldReminderEnabled) {
+      await supabase.from('application_events').insert({
+        application_id: id,
+        user_id: user.id,
+        event_type: newReminderEnabled ? 'reminder_enabled' : 'reminder_disabled',
       });
     }
 

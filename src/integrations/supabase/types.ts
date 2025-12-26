@@ -130,8 +130,10 @@ export type Database = {
           applied_date: string
           company: string
           created_at: string
+          deadline_date: string | null
           id: string
           platform: string | null
+          reminder_enabled: boolean
           role: string
           status: string
           updated_at: string
@@ -141,8 +143,10 @@ export type Database = {
           applied_date?: string
           company: string
           created_at?: string
+          deadline_date?: string | null
           id?: string
           platform?: string | null
+          reminder_enabled?: boolean
           role: string
           status?: string
           updated_at?: string
@@ -152,8 +156,10 @@ export type Database = {
           applied_date?: string
           company?: string
           created_at?: string
+          deadline_date?: string | null
           id?: string
           platform?: string | null
+          reminder_enabled?: boolean
           role?: string
           status?: string
           updated_at?: string

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { differenceInDays, parseISO, isToday, isTomorrow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +22,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Application, ApplicationInput, StatusTransitionResult } from '../hooks/useApplications';
 import { ApplicationForm } from './ApplicationForm';
 import { StatusTransitionButtons } from './StatusTransitionButtons';
@@ -48,6 +55,45 @@ const statusColors: Record<string, string> = {
   Accepted: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30',
   Rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
+
+function DeadlineIndicator({ deadlineDate, reminderEnabled }: { deadlineDate: string | null; reminderEnabled: boolean }) {
+  if (!deadlineDate || !reminderEnabled) return null;
+
+  const deadline = parseISO(deadlineDate);
+  const daysUntil = differenceInDays(deadline, new Date());
+
+  // Only show indicator if deadline is within 3 days
+  if (daysUntil > 3 || daysUntil < 0) return null;
+
+  let message = '';
+  let urgencyClass = '';
+
+  if (isToday(deadline)) {
+    message = 'Deadline today!';
+    urgencyClass = 'text-destructive animate-pulse';
+  } else if (isTomorrow(deadline)) {
+    message = 'Deadline tomorrow';
+    urgencyClass = 'text-yellow-500';
+  } else {
+    message = `Deadline in ${daysUntil} days`;
+    urgencyClass = 'text-muted-foreground';
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={`inline-flex items-center gap-1 ${urgencyClass}`}>
+            <Clock className="h-4 w-4" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{message}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 // Extracted component for expanded content to use hooks
 function ExpandedApplicationContent({ applicationId, userId }: { applicationId: string; userId: string | undefined }) {
@@ -129,7 +175,12 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
             {applications.map((app) => (
               <>
                 <TableRow key={app.id}>
-                  <TableCell className="font-medium">{app.company}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {app.company}
+                      <DeadlineIndicator deadlineDate={app.deadline_date} reminderEnabled={app.reminder_enabled} />
+                    </div>
+                  </TableCell>
                   <TableCell>{app.role}</TableCell>
                   <TableCell className="text-muted-foreground">{app.platform || '-'}</TableCell>
                   <TableCell>
