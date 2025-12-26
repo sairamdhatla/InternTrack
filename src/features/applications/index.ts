@@ -14,6 +14,7 @@ export { ApplicationTimeline } from './components/ApplicationTimeline';
 export { AddNoteForm } from './components/AddNoteForm';
 export { ApplicationFilters } from './components/ApplicationFilters';
 export { WeeklyProgressCard } from './components/WeeklyProgressCard';
+export { ExportButton } from './components/ExportButton';
 export * from './utils/statusStateMachine';
 export type { Application, ApplicationInput, StatusTransitionResult } from './hooks/useApplications';
 export type { ApplicationFile } from './hooks/useApplicationFiles';
