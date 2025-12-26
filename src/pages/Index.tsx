@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters, WeeklyProgressCard } from '@/features/applications';
+import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters, WeeklyProgressCard, ExportButton } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { useSubscription } from '@/features/subscriptions';
 import { Button } from '@/components/ui/button';
@@ -141,9 +141,12 @@ export default function Index() {
 
           {/* Applications List Section */}
           <section>
-            <h2 className="text-xl font-display font-semibold text-foreground mb-4">
-              Your Applications ({filteredApplications.length}{applications.length !== filteredApplications.length && ` of ${applications.length}`})
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Your Applications ({filteredApplications.length}{applications.length !== filteredApplications.length && ` of ${applications.length}`})
+              </h2>
+              <ExportButton />
+            </div>
             <ApplicationFilters
               filters={filters}
               onFiltersChange={setFilters}
