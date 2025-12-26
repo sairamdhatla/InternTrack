@@ -214,6 +214,77 @@ async function processFollowUpReminders(supabase: any): Promise<JobResult> {
   }
 }
 
+async function processWeeklySummaryNotifications(supabase: any): Promise<JobResult> {
+  console.log('Processing weekly summary notifications...');
+  
+  try {
+    // Only run on Sundays (day 0) to create weekly summary
+    const today = new Date();
+    if (today.getDay() !== 0) {
+      console.log('Not Sunday, skipping weekly summary');
+      return { success: true, message: 'Skipped - not Sunday' };
+    }
+
+    // Get all unique users who have applications
+    const { data: users, error: usersError } = await supabase
+      .from('applications')
+      .select('user_id')
+      .limit(1000);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return { success: false, message: usersError.message };
+    }
+
+    // Get unique user IDs
+    const uniqueUserIds = [...new Set(users?.map((u: any) => u.user_id) || [])];
+
+    if (uniqueUserIds.length === 0) {
+      console.log('No users found');
+      return { success: true, message: 'No users to notify' };
+    }
+
+    let notificationsCreated = 0;
+
+    for (const userId of uniqueUserIds) {
+      // Check if a weekly summary was already sent this week
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - 7);
+      
+      const { data: existingNotification } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('type', 'weekly_summary')
+        .gte('created_at', weekStart.toISOString())
+        .maybeSingle();
+
+      if (!existingNotification) {
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            application_id: null,
+            type: 'weekly_summary',
+            message: '📊 Your weekly progress summary is ready',
+          });
+
+        if (insertError) {
+          console.error('Error inserting weekly summary notification:', insertError);
+        } else {
+          notificationsCreated++;
+        }
+      }
+    }
+
+    console.log(`Created ${notificationsCreated} weekly summary notifications`);
+    return { success: true, message: `Created ${notificationsCreated} weekly summary notifications` };
+  } catch (error) {
+    console.error('Weekly summary notification processing error:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
 async function processInactivityAlerts(supabase: any): Promise<JobResult> {
   console.log('Processing inactivity alerts...');
   
@@ -318,10 +389,11 @@ Deno.serve(async (req) => {
     console.log('Starting notification processing jobs...');
 
     // Run all jobs
-    const [interviewResult, deadlineResult, followUpResult, inactivityResult] = await Promise.all([
+    const [interviewResult, deadlineResult, followUpResult, weeklySummaryResult, inactivityResult] = await Promise.all([
       runWithRetry(processInterviewReminders, supabase, 'InterviewReminders'),
       runWithRetry(processDeadlineReminders, supabase, 'DeadlineReminders'),
       runWithRetry(processFollowUpReminders, supabase, 'FollowUpReminders'),
+      runWithRetry(processWeeklySummaryNotifications, supabase, 'WeeklySummary'),
       runWithRetry(processInactivityAlerts, supabase, 'InactivityAlerts'),
     ]);
 
@@ -331,6 +403,7 @@ Deno.serve(async (req) => {
         interviewReminders: interviewResult,
         deadlineReminders: deadlineResult,
         followUpReminders: followUpResult,
+        weeklySummary: weeklySummaryResult,
         inactivityAlerts: inactivityResult,
       },
     };

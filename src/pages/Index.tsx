@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters } from '@/features/applications';
+import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters, WeeklyProgressCard } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { useSubscription } from '@/features/subscriptions';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,11 @@ export default function Index() {
       {/* Main Content */}
       <main className="container py-8">
         <div className="max-w-4xl mx-auto space-y-8">
+          {/* Weekly Progress Section */}
+          <section>
+            <WeeklyProgressCard userId={user?.id} />
+          </section>
+
           {/* Analytics Section */}
           <section>
             <div className="flex items-center gap-2 mb-4">
