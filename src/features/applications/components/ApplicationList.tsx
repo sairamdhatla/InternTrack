@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Clock, MoreVertical } from 'lucide-react';
 import { differenceInDays, parseISO, isToday, isTomorrow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,12 +49,12 @@ interface ApplicationListProps {
 }
 
 const statusColors: Record<string, string> = {
-  Applied: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  OA: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  Interview: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  Offer: 'bg-green-500/20 text-green-400 border-green-500/30',
-  Accepted: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30',
-  Rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
+  Applied: 'status-badge-applied',
+  OA: 'status-badge-oa',
+  Interview: 'status-badge-interview',
+  Offer: 'status-badge-offer',
+  Accepted: 'status-badge-accepted',
+  Rejected: 'status-badge-rejected',
 };
 
 function DeadlineIndicator({ deadlineDate, reminderEnabled }: { deadlineDate: string | null; reminderEnabled: boolean }) {
@@ -71,10 +71,10 @@ function DeadlineIndicator({ deadlineDate, reminderEnabled }: { deadlineDate: st
 
   if (isToday(deadline)) {
     message = 'Deadline today!';
-    urgencyClass = 'text-destructive animate-pulse';
+    urgencyClass = 'text-rose-500 animate-pulse';
   } else if (isTomorrow(deadline)) {
     message = 'Deadline tomorrow';
-    urgencyClass = 'text-yellow-500';
+    urgencyClass = 'text-amber-500';
   } else {
     message = `Deadline in ${daysUntil} days`;
     urgencyClass = 'text-muted-foreground';
@@ -103,7 +103,7 @@ function ExpandedApplicationContent({ applicationId, userId }: { applicationId: 
 
   return (
     <Tabs defaultValue="timeline" className="w-full">
-      <TabsList className="mb-4">
+      <TabsList className="mb-4 bg-muted/50">
         <TabsTrigger value="timeline">Timeline</TabsTrigger>
         <TabsTrigger value="follow-ups">Follow-ups</TabsTrigger>
         <TabsTrigger value="files">Files</TabsTrigger>
@@ -138,11 +138,22 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading applications...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   if (applications.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">No applications yet. Add your first one above.</div>;
+    return (
+      <div className="text-center py-12">
+        <div className="rounded-full bg-muted p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+          <Clock className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <p className="text-muted-foreground">No applications yet. Add your first one above!</p>
+      </div>
+    );
   }
 
   const editingApp = editingId ? applications.find(a => a.id === editingId) : null;
@@ -150,8 +161,8 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
   return (
     <>
       {editingApp && (
-        <div className="mb-6 p-4 border border-border rounded-lg bg-muted/30">
-          <h3 className="text-lg font-medium mb-4">Edit Application</h3>
+        <div className="mb-6 p-5 border border-border rounded-xl bg-card shadow-card animate-scale-in">
+          <h3 className="text-lg font-display font-semibold mb-4">Edit Application</h3>
           <ApplicationForm
             initialData={editingApp}
             onSubmit={async (input) => {
@@ -164,43 +175,49 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
         </div>
       )}
 
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden bg-card shadow-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Platform</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Applied</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
+              <TableHead className="font-semibold">Company</TableHead>
+              <TableHead className="font-semibold">Role</TableHead>
+              <TableHead className="font-semibold hidden sm:table-cell">Platform</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold hidden md:table-cell">Applied</TableHead>
+              <TableHead className="w-[100px] font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {applications.map((app) => (
+            {applications.map((app, index) => (
               <>
-                <TableRow key={app.id}>
+                <TableRow 
+                  key={app.id} 
+                  className="table-row-interactive group"
+                  style={{ animationDelay: `${index * 0.03}s` }}
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {app.company}
+                      <span className="truncate max-w-[150px]">{app.company}</span>
                       <DeadlineIndicator deadlineDate={app.deadline_date} reminderEnabled={app.reminder_enabled} />
                     </div>
                   </TableCell>
-                  <TableCell>{app.role}</TableCell>
-                  <TableCell className="text-muted-foreground">{app.platform || '-'}</TableCell>
+                  <TableCell className="truncate max-w-[120px]">{app.role}</TableCell>
+                  <TableCell className="text-muted-foreground hidden sm:table-cell">{app.platform || '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={statusColors[app.status] || ''}>
+                      <Badge variant="outline" className={`font-medium ${statusColors[app.status] || ''}`}>
                         {app.status}
                       </Badge>
-                      <StatusTransitionButtons
-                        currentStatus={app.status}
-                        onTransition={(newStatus) => handleTransition(app.id, newStatus)}
-                        disabled={transitioningId === app.id}
-                      />
+                      <div className="hidden lg:block">
+                        <StatusTransitionButtons
+                          currentStatus={app.status}
+                          onTransition={(newStatus) => handleTransition(app.id, newStatus)}
+                          disabled={transitioningId === app.id}
+                        />
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-muted-foreground hidden md:table-cell">
                     {new Date(app.applied_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
@@ -208,6 +225,7 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 btn-press"
                         onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
                       >
                         {expandedId === app.id ? (
@@ -219,6 +237,7 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 btn-press opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => setEditingId(app.id)}
                         disabled={editingId === app.id}
                       >
@@ -227,16 +246,17 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 btn-press opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => setDeleteId(app.id)}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4 text-rose-500" />
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
                 {expandedId === app.id && (
                   <TableRow key={`${app.id}-expanded`}>
-                    <TableCell colSpan={6} className="bg-muted/30 p-4">
+                    <TableCell colSpan={6} className="bg-muted/20 p-5 animate-fade-in">
                       <ExpandedApplicationContent applicationId={app.id} userId={userId} />
                     </TableCell>
                   </TableRow>
@@ -248,15 +268,15 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
       </div>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="animate-scale-in">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Application</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">Delete Application</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this application? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="btn-press">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 if (deleteId) {
@@ -264,7 +284,7 @@ export function ApplicationList({ applications, userId, onUpdate, onDelete, onTr
                   setDeleteId(null);
                 }
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-rose-500 text-white hover:bg-rose-600 btn-press"
             >
               Delete
             </AlertDialogAction>

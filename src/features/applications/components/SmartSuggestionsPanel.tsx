@@ -25,6 +25,8 @@ import {
   Check,
   MessageSquarePlus,
   Loader2,
+  Sparkles,
+  Bot,
 } from 'lucide-react';
 import type { SmartSuggestion, SuggestionType, SuggestionPriority } from '../hooks/useSmartSuggestions';
 
@@ -45,18 +47,21 @@ const ICON_MAP: Record<SuggestionType, React.ComponentType<{ className?: string 
   stale: AlertTriangle,
 };
 
-const PRIORITY_STYLES: Record<SuggestionPriority, { badge: string; icon: string }> = {
+const PRIORITY_STYLES: Record<SuggestionPriority, { badge: string; icon: string; glow: string }> = {
   high: { 
-    badge: 'bg-destructive/10 text-destructive border-destructive/20', 
-    icon: 'text-destructive' 
+    badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', 
+    icon: 'text-rose-500',
+    glow: 'shadow-rose-500/10',
   },
   medium: { 
-    badge: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20', 
-    icon: 'text-yellow-600 dark:text-yellow-400' 
+    badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', 
+    icon: 'text-amber-500',
+    glow: 'shadow-amber-500/10',
   },
   low: { 
     badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', 
-    icon: 'text-blue-600 dark:text-blue-400' 
+    icon: 'text-blue-500',
+    glow: 'shadow-blue-500/10',
   },
 };
 
@@ -121,17 +126,22 @@ export function SmartSuggestionsPanel({
 
   if (suggestions.length === 0) {
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-2 pb-2">
-          <Lightbulb className="h-5 w-5 text-muted-foreground" />
-          <CardTitle className="text-base font-semibold">Smart Suggestions</CardTitle>
+      <Card className="ai-coach-card">
+        <CardHeader className="flex flex-row items-center gap-3 pb-2">
+          <div className="p-2 rounded-xl bg-primary/10">
+            <Bot className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-base font-display font-semibold">AI Career Coach</CardTitle>
+            <p className="text-xs text-muted-foreground">Personalized guidance</p>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="rounded-full bg-muted p-3 mb-3">
-              <Lightbulb className="h-6 w-6 text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="rounded-full bg-primary/10 p-4 mb-4">
+              <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground max-w-[200px]">
               No suggestions right now. Keep tracking your applications!
             </p>
           </div>
@@ -141,16 +151,21 @@ export function SmartSuggestionsPanel({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <Lightbulb className="h-5 w-5 text-yellow-500" />
-        <CardTitle className="text-base font-semibold">Smart Suggestions</CardTitle>
-        <Badge variant="secondary" className="ml-auto">
+    <Card className="ai-coach-card overflow-hidden">
+      <CardHeader className="flex flex-row items-center gap-3 pb-3">
+        <div className="p-2 rounded-xl bg-primary/10">
+          <Bot className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex-1">
+          <CardTitle className="text-base font-display font-semibold">AI Career Coach</CardTitle>
+          <p className="text-xs text-muted-foreground">Personalized guidance</p>
+        </div>
+        <Badge className="bg-primary/10 text-primary border-primary/20 font-semibold">
           {suggestions.length}
         </Badge>
       </CardHeader>
       <CardContent className="space-y-3">
-        {suggestions.slice(0, 5).map((suggestion) => {
+        {suggestions.slice(0, 4).map((suggestion, index) => {
           const Icon = ICON_MAP[suggestion.type] || Info;
           const styles = PRIORITY_STYLES[suggestion.priority];
           const isLoading = loadingActions[suggestion.id];
@@ -159,18 +174,19 @@ export function SmartSuggestionsPanel({
           return (
             <div 
               key={suggestion.id}
-              className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50"
+              className={`group flex items-start gap-3 p-3 rounded-xl bg-card border border-border/50 transition-all duration-200 hover:border-border hover:shadow-md ${styles.glow} animate-fade-in`}
+              style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <div className={`mt-0.5 p-1.5 rounded-md ${styles.badge}`}>
+              <div className={`mt-0.5 p-2 rounded-lg ${styles.badge} transition-transform group-hover:scale-105`}>
                 <Icon className={`h-4 w-4 ${styles.icon}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className={`text-xs ${styles.badge}`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Badge variant="outline" className={`text-xs font-medium ${styles.badge}`}>
                     {TYPE_LABELS[suggestion.type]}
                   </Badge>
                   {suggestion.priority === 'high' && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge className="text-xs bg-rose-500 text-white border-0 animate-pulse-soft">
                       Urgent
                     </Badge>
                   )}
@@ -181,12 +197,12 @@ export function SmartSuggestionsPanel({
                 
                 {/* Note input */}
                 {showNoteInput === suggestion.id && hasApplication && (
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex gap-2 mt-3">
                     <Input
                       placeholder="Add a quick note..."
                       value={noteInputs[suggestion.id] || ''}
                       onChange={(e) => setNoteInputs(prev => ({ ...prev, [suggestion.id]: e.target.value }))}
-                      className="h-8 text-sm"
+                      className="h-9 text-sm rounded-lg"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && suggestion.applicationId) {
                           handleAddNote(suggestion.applicationId, suggestion.id);
@@ -195,7 +211,7 @@ export function SmartSuggestionsPanel({
                     />
                     <Button 
                       size="sm" 
-                      className="h-8"
+                      className="h-9 btn-press"
                       disabled={isLoading || !noteInputs[suggestion.id]?.trim()}
                       onClick={() => suggestion.applicationId && handleAddNote(suggestion.applicationId, suggestion.id)}
                     >
@@ -204,7 +220,7 @@ export function SmartSuggestionsPanel({
                     <Button 
                       size="sm" 
                       variant="ghost"
-                      className="h-8 px-2"
+                      className="h-9 px-2"
                       onClick={() => setShowNoteInput(null)}
                     >
                       <X className="h-3 w-3" />
@@ -218,7 +234,7 @@ export function SmartSuggestionsPanel({
                     <Button 
                       variant="link" 
                       size="sm" 
-                      className="h-auto p-0 text-xs"
+                      className="h-auto p-0 text-xs text-primary"
                       onClick={() => onViewApplication(suggestion.applicationId!)}
                     >
                       View
@@ -232,7 +248,7 @@ export function SmartSuggestionsPanel({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-6 w-6 p-0 ml-auto"
+                          className="h-7 w-7 p-0 ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
                           disabled={isLoading}
                         >
                           {isLoading ? (
@@ -245,13 +261,13 @@ export function SmartSuggestionsPanel({
                       <DropdownMenuContent align="end" className="w-48">
                         {hasApplication && onMarkDone && (
                           <DropdownMenuItem onClick={() => handleMarkDone(suggestion.applicationId!, suggestion.id)}>
-                            <Check className="h-4 w-4 mr-2" />
+                            <Check className="h-4 w-4 mr-2 text-emerald-500" />
                             Mark as done
                           </DropdownMenuItem>
                         )}
                         {hasApplication && onAddNote && (
                           <DropdownMenuItem onClick={() => setShowNoteInput(suggestion.id)}>
-                            <MessageSquarePlus className="h-4 w-4 mr-2" />
+                            <MessageSquarePlus className="h-4 w-4 mr-2 text-blue-500" />
                             Add quick note
                           </DropdownMenuItem>
                         )}
@@ -259,11 +275,11 @@ export function SmartSuggestionsPanel({
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleSnooze(suggestion.id, 3)}>
-                              <AlarmClockOff className="h-4 w-4 mr-2" />
+                              <AlarmClockOff className="h-4 w-4 mr-2 text-amber-500" />
                               Snooze 3 days
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleSnooze(suggestion.id, 7)}>
-                              <AlarmClockOff className="h-4 w-4 mr-2" />
+                              <AlarmClockOff className="h-4 w-4 mr-2 text-amber-500" />
                               Snooze 7 days
                             </DropdownMenuItem>
                           </>
@@ -273,7 +289,7 @@ export function SmartSuggestionsPanel({
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               onClick={() => handleDismiss(suggestion.id)}
-                              className="text-destructive focus:text-destructive"
+                              className="text-rose-500 focus:text-rose-500"
                             >
                               <X className="h-4 w-4 mr-2" />
                               Dismiss
@@ -288,9 +304,9 @@ export function SmartSuggestionsPanel({
             </div>
           );
         })}
-        {suggestions.length > 5 && (
-          <p className="text-xs text-muted-foreground text-center pt-2">
-            +{suggestions.length - 5} more suggestions
+        {suggestions.length > 4 && (
+          <p className="text-xs text-muted-foreground text-center pt-1 font-medium">
+            +{suggestions.length - 4} more suggestions
           </p>
         )}
       </CardContent>
