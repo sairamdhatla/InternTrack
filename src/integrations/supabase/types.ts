@@ -336,6 +336,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          career_insights_enabled: boolean
+          created_at: string
+          deadline_reminders_enabled: boolean
+          follow_up_suggestions_enabled: boolean
+          id: string
+          inactivity_alert_days: number
+          inactivity_alerts_enabled: boolean
+          insight_suggestions_enabled: boolean
+          interview_reminders_enabled: boolean
+          smart_suggestions_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          career_insights_enabled?: boolean
+          created_at?: string
+          deadline_reminders_enabled?: boolean
+          follow_up_suggestions_enabled?: boolean
+          id?: string
+          inactivity_alert_days?: number
+          inactivity_alerts_enabled?: boolean
+          insight_suggestions_enabled?: boolean
+          interview_reminders_enabled?: boolean
+          smart_suggestions_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          career_insights_enabled?: boolean
+          created_at?: string
+          deadline_reminders_enabled?: boolean
+          follow_up_suggestions_enabled?: boolean
+          id?: string
+          inactivity_alert_days?: number
+          inactivity_alerts_enabled?: boolean
+          insight_suggestions_enabled?: boolean
+          interview_reminders_enabled?: boolean
+          smart_suggestions_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
