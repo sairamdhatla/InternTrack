@@ -309,6 +309,33 @@ export type Database = {
         }
         Relationships: []
       }
+      suggestion_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          snooze_until: string | null
+          suggestion_key: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          snooze_until?: string | null
+          suggestion_key: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          snooze_until?: string | null
+          suggestion_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

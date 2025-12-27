@@ -6,6 +6,7 @@ export { useApplicationNotes } from './hooks/useApplicationNotes';
 export { useApplicationFilters } from './hooks/useApplicationFilters';
 export { useWeeklyProgress } from './hooks/useWeeklyProgress';
 export { useSmartSuggestions } from './hooks/useSmartSuggestions';
+export { useSuggestionActions } from './hooks/useSuggestionActions';
 export { ApplicationForm } from './components/ApplicationForm';
 export { ApplicationList } from './components/ApplicationList';
 export { StatusTransitionButtons } from './components/StatusTransitionButtons';
