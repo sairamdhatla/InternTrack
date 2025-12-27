@@ -187,6 +187,8 @@ export default function Index() {
 
   return (
     <div className="min-h-screen app-background">
+      {/* Animated depth layer for premium background */}
+      <div className="app-depth-layer" />
       {/* Header - Professional, minimal */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="container flex h-14 items-center justify-between">
