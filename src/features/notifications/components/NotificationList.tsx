@@ -1,6 +1,5 @@
 import { Bell, CheckCheck, Clock, AlertTriangle, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNotifications, Notification } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -23,18 +22,18 @@ function NotificationItem({
 
   return (
     <div 
-      className={`group flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 hover:shadow-sm ${
+      className={`group flex items-start gap-3 p-3 rounded-lg border transition-colors duration-150 ${
         isUnread 
-          ? 'bg-[#4F46E5]/5 border-[#4F46E5]/20 dark:bg-primary/10' 
-          : 'bg-muted/30 border-border/50'
+          ? 'bg-primary/5 border-primary/10' 
+          : 'bg-background border-border'
       }`}
     >
-      <div className={`p-2 rounded-lg shrink-0 ${
+      <div className={`p-1.5 rounded-md shrink-0 ${
         notification.type === 'interview_reminder' 
-          ? 'bg-blue-500/10 text-blue-500' 
-          : 'bg-amber-500/10 text-amber-500'
+          ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+          : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
       }`}>
-        <Icon className="h-4 w-4" />
+        <Icon className="h-3.5 w-3.5" />
       </div>
       <div className="flex-1 min-w-0">
         <p className={`text-sm leading-relaxed ${isUnread ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
@@ -49,9 +48,9 @@ function NotificationItem({
           variant="ghost" 
           size="sm" 
           onClick={() => onMarkAsRead(notification.id)}
-          className="shrink-0 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="shrink-0 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <CheckCheck className="h-4 w-4 text-emerald-500" />
+          <CheckCheck className="h-3.5 w-3.5 text-muted-foreground" />
         </Button>
       )}
     </div>
@@ -63,8 +62,8 @@ export function NotificationList({ userId, compact = false }: NotificationListPr
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+      <div className="flex items-center justify-center py-6">
+        <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
       </div>
     );
   }
@@ -75,12 +74,9 @@ export function NotificationList({ userId, compact = false }: NotificationListPr
     
     if (displayNotifications.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="rounded-full bg-muted p-3 mb-3">
-            <Inbox className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">No alerts right now</p>
-          <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <Inbox className="h-5 w-5 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No notifications</p>
         </div>
       );
     }
@@ -96,8 +92,8 @@ export function NotificationList({ userId, compact = false }: NotificationListPr
           />
         ))}
         {notifications.length > 3 && (
-          <p className="text-xs text-muted-foreground text-center pt-2 font-medium">
-            +{notifications.length - 3} more notifications
+          <p className="text-xs text-muted-foreground text-center pt-1">
+            +{notifications.length - 3} more
           </p>
         )}
       </div>
@@ -110,20 +106,18 @@ export function NotificationList({ userId, compact = false }: NotificationListPr
       {unreadCount > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+            {unreadCount} unread
           </p>
-          <Button variant="outline" size="sm" onClick={() => markAllAsRead()}>
-            Mark all as read
+          <Button variant="ghost" size="sm" onClick={() => markAllAsRead()} className="text-xs">
+            Mark all read
           </Button>
         </div>
       )}
       
       {notifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <Bell className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <p className="text-muted-foreground">No notifications yet</p>
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <Bell className="h-6 w-6 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No notifications</p>
         </div>
       ) : (
         <div className="space-y-2">

@@ -39,9 +39,6 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Zap,
-  ChevronRight,
-  User,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -181,7 +178,7 @@ export default function Index() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -189,134 +186,112 @@ export default function Index() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-white/80 dark:bg-card/80 backdrop-blur-lg">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4F46E5] shadow-lg shadow-[#4F46E5]/25">
-              <Briefcase className="h-5 w-5 text-white" />
+    <div className="min-h-screen bg-background">
+      {/* Header - Professional, minimal */}
+      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <Briefcase className="h-4 w-4 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl font-display font-bold text-foreground tracking-tight">InternTrack</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Career Command Center</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold text-foreground">InternTrack</h1>
+              {isPro && (
+                <Badge variant="secondary" className="text-xs font-medium">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Pro
+                </Badge>
+              )}
             </div>
-            {isPro && (
-              <Badge className="gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
-                <Crown className="h-3 w-3" />
-                Pro
-              </Badge>
-            )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden sm:flex" asChild>
-              <Link to="/pricing">{isPro ? "Manage Plan" : "Upgrade"}</Link>
+            <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+              <Link to="/pricing">{isPro ? "Manage" : "Upgrade"}</Link>
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sign out</span>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container py-6 lg:py-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="container py-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           
-          {/* ===== TODAY SNAPSHOT HERO ===== */}
+          {/* Overview Section */}
           <section className="animate-fade-in">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-5 w-5 text-[#4F46E5]" />
-              <h2 className="text-lg font-display font-bold text-foreground">Today's Snapshot</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Overview</h2>
+              <span className="text-sm text-muted-foreground">
+                {applications.length} total applications
+              </span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Total Applications */}
-              <Card className="bg-white dark:bg-card border-0 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Applications</p>
-                      <p className="text-4xl font-bold font-display text-[#4F46E5] tabular-nums animate-count-up">
-                        {todaySnapshot.totalApps}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">{todaySnapshot.activeApps} active</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-[#4F46E5]/10 group-hover:bg-[#4F46E5]/15 transition-colors">
-                      <Target className="h-6 w-6 text-[#4F46E5]" />
-                    </div>
+              {/* Applications */}
+              <Card className="border border-border bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Target className="h-4 w-4 text-muted-foreground" />
                   </div>
+                  <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    {todaySnapshot.totalApps}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Applications</p>
+                  <p className="text-xs text-muted-foreground mt-1">{todaySnapshot.activeApps} active</p>
                 </CardContent>
               </Card>
 
               {/* Interviews */}
-              <Card className="bg-white dark:bg-card border-0 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Interviews</p>
-                      <p className="text-4xl font-bold font-display text-amber-500 tabular-nums animate-count-up">
-                        {todaySnapshot.interviews}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">in progress</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/15 transition-colors">
-                      <Sparkles className="h-6 w-6 text-amber-500" />
-                    </div>
+              <Card className="border border-border bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
                   </div>
+                  <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    {todaySnapshot.interviews}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Interviews</p>
+                  <p className="text-xs text-muted-foreground mt-1">in progress</p>
                 </CardContent>
               </Card>
 
               {/* Deadlines */}
-              <Card className="bg-white dark:bg-card border-0 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Deadlines</p>
-                      <p className={`text-4xl font-bold font-display tabular-nums animate-count-up ${
-                        todaySnapshot.upcomingDeadlines > 0 ? 'text-rose-500' : 'text-emerald-500'
-                      }`}>
-                        {todaySnapshot.upcomingDeadlines}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">next 7 days</p>
-                    </div>
-                    <div className={`p-3 rounded-xl transition-colors ${
-                      todaySnapshot.upcomingDeadlines > 0 ? 'bg-rose-500/10 group-hover:bg-rose-500/15' : 'bg-emerald-500/10 group-hover:bg-emerald-500/15'
-                    }`}>
-                      <Calendar className={`h-6 w-6 ${todaySnapshot.upcomingDeadlines > 0 ? 'text-rose-500' : 'text-emerald-500'}`} />
-                    </div>
+              <Card className="border border-border bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                   </div>
+                  <p className={`text-2xl font-semibold tabular-nums ${
+                    todaySnapshot.upcomingDeadlines > 0 ? 'text-amber-600' : 'text-foreground'
+                  }`}>
+                    {todaySnapshot.upcomingDeadlines}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Deadlines</p>
+                  <p className="text-xs text-muted-foreground mt-1">next 7 days</p>
                 </CardContent>
               </Card>
 
               {/* Response Rate */}
-              <Card className="bg-white dark:bg-card border-0 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Response Rate</p>
-                      <p className="text-4xl font-bold font-display text-emerald-500 tabular-nums animate-count-up">
-                        {todaySnapshot.responseRate}%
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">got replies</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-emerald-500/10 group-hover:bg-emerald-500/15 transition-colors">
-                      <TrendingUp className="h-6 w-6 text-emerald-500" />
-                    </div>
+              <Card className="border border-border bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </div>
+                  <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    {todaySnapshot.responseRate}%
+                  </p>
+                  <p className="text-sm text-muted-foreground">Response Rate</p>
+                  <p className="text-xs text-muted-foreground mt-1">got replies</p>
                 </CardContent>
               </Card>
             </div>
           </section>
 
-          {/* ===== WHAT SHOULD I DO NEXT? ===== */}
+          {/* Suggestions & Alerts */}
           {((preferences?.smart_suggestions_enabled && suggestions.length > 0) || insights.length > 0) && (
-            <section className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-2 mb-4">
-                <ChevronRight className="h-5 w-5 text-[#4F46E5]" />
-                <h2 className="text-lg font-display font-bold text-foreground">What should I do next?</h2>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* AI Career Coach - Smart Suggestions */}
+            <section className="animate-fade-in">
+              <h2 className="text-lg font-semibold text-foreground mb-4">Suggested Actions</h2>
+              <div className="grid gap-4 lg:grid-cols-2">
                 {preferences?.smart_suggestions_enabled && (
                   <SmartSuggestionsPanel 
                     suggestions={suggestions}
@@ -326,18 +301,11 @@ export default function Index() {
                     onAddNote={handleAddNote}
                   />
                 )}
-
-                {/* Important Notifications */}
-                <Card className="bg-white dark:bg-card border-0 shadow-md">
+                <Card className="border border-border bg-card">
                   <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-rose-500/10">
-                        <Bell className="h-5 w-5 text-rose-500" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-base font-display font-semibold">Important Alerts</CardTitle>
-                        <p className="text-xs text-muted-foreground">Deadlines & reminders</p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium">Notifications</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -348,46 +316,46 @@ export default function Index() {
             </section>
           )}
 
-          {/* ===== MAIN TABS ===== */}
-          <section className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          {/* Main Tabs */}
+          <section className="animate-fade-in">
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-4 h-12 p-1.5 bg-white dark:bg-card shadow-sm rounded-xl border-0">
-                <TabsTrigger value="dashboard" className="gap-2 rounded-lg data-[state=active]:bg-[#4F46E5] data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
-                  <BarChart3 className="h-4 w-4" />
-                  <span className="hidden sm:inline font-medium">Analytics</span>
+              <TabsList className="w-full grid grid-cols-4 h-10 bg-muted/50 rounded-lg p-1">
+                <TabsTrigger value="dashboard" className="text-sm rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Analytics</span>
                 </TabsTrigger>
-                <TabsTrigger value="applications" className="gap-2 rounded-lg data-[state=active]:bg-[#4F46E5] data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline font-medium">Applications</span>
+                <TabsTrigger value="applications" className="text-sm rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Applications</span>
                 </TabsTrigger>
-                <TabsTrigger value="insights" className="gap-2 rounded-lg data-[state=active]:bg-[#4F46E5] data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="hidden sm:inline font-medium">Insights</span>
+                <TabsTrigger value="insights" className="text-sm rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Insights</span>
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="gap-2 rounded-lg data-[state=active]:bg-[#4F46E5] data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline font-medium">Settings</span>
+                <TabsTrigger value="settings" className="text-sm rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Settings</span>
                 </TabsTrigger>
               </TabsList>
 
               {/* Analytics Tab */}
-              <TabsContent value="dashboard" className="mt-6 animate-fade-in">
-                <Card className="bg-white dark:bg-card border-0 shadow-md">
+              <TabsContent value="dashboard" className="mt-4 animate-fade-in">
+                <Card className="border border-border bg-card">
                   <CardHeader className="pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <CardTitle className="text-lg font-display">Performance Analytics</CardTitle>
+                      <CardTitle className="text-base font-medium">Performance</CardTitle>
                       <Tabs value={activeAnalyticsTab} onValueChange={setActiveAnalyticsTab}>
-                        <TabsList className="bg-muted/50 p-1">
-                          <TabsTrigger value="funnel" className="text-xs gap-1.5">
-                            <Activity className="h-3.5 w-3.5" />
+                        <TabsList className="h-8 bg-muted/50">
+                          <TabsTrigger value="funnel" className="text-xs h-6 px-3">
+                            <Activity className="h-3 w-3 mr-1" />
                             Funnel
                           </TabsTrigger>
-                          <TabsTrigger value="platforms" className="text-xs gap-1.5">
-                            <PieChart className="h-3.5 w-3.5" />
+                          <TabsTrigger value="platforms" className="text-xs h-6 px-3">
+                            <PieChart className="h-3 w-3 mr-1" />
                             Platforms
                           </TabsTrigger>
-                          <TabsTrigger value="timeline" className="text-xs gap-1.5">
-                            <Clock className="h-3.5 w-3.5" />
+                          <TabsTrigger value="timeline" className="text-xs h-6 px-3">
+                            <Clock className="h-3 w-3 mr-1" />
                             Timeline
                           </TabsTrigger>
                         </TabsList>
@@ -401,17 +369,17 @@ export default function Index() {
               </TabsContent>
 
               {/* Applications Tab */}
-              <TabsContent value="applications" className="mt-6 space-y-6 animate-fade-in">
-                <Card className="bg-white dark:bg-card border-0 shadow-md border-dashed border-2 border-[#4F46E5]/20 bg-gradient-to-br from-[#4F46E5]/5 to-transparent">
-                  <CardHeader className="pb-4">
+              <TabsContent value="applications" className="mt-4 space-y-4 animate-fade-in">
+                <Card className="border border-border bg-card">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-lg font-display">
-                        <Plus className="h-5 w-5 text-[#4F46E5]" />
-                        Add New Application
+                      <CardTitle className="flex items-center gap-2 text-base font-medium">
+                        <Plus className="h-4 w-4 text-muted-foreground" />
+                        New Application
                       </CardTitle>
                       {!isPro && (
-                        <Badge variant="secondary" className="font-normal">
-                          {getRemainingSlots()} of 10 remaining
+                        <Badge variant="secondary" className="text-xs">
+                          {getRemainingSlots()} of 10 left
                         </Badge>
                       )}
                     </div>
@@ -419,26 +387,26 @@ export default function Index() {
                   <CardContent>
                     <ApplicationForm onSubmit={createApplication} disabled={!canAddApplication()} />
                     {!canAddApplication() && !isPro && (
-                      <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                        <p className="text-sm text-rose-600 dark:text-rose-400 font-medium">
-                          You've reached the free limit of 10 applications.
+                      <div className="mt-4 flex items-center justify-between p-3 rounded-lg bg-muted border border-border">
+                        <p className="text-sm text-muted-foreground">
+                          Free limit reached (10 applications)
                         </p>
-                        <Button size="sm" className="bg-[#4F46E5] hover:bg-[#4338CA]" asChild>
-                          <Link to="/pricing">Upgrade to Pro</Link>
+                        <Button size="sm" asChild>
+                          <Link to="/pricing">Upgrade</Link>
                         </Button>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white dark:bg-card border-0 shadow-md">
-                  <CardHeader className="pb-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <CardTitle className="text-lg font-display">
-                        Your Applications
-                        <Badge variant="secondary" className="ml-2 font-normal">
+                <Card className="border border-border bg-card">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <CardTitle className="text-base font-medium">
+                        Applications
+                        <Badge variant="secondary" className="ml-2 text-xs">
                           {filteredApplications.length}
-                          {applications.length !== filteredApplications.length && ` of ${applications.length}`}
+                          {applications.length !== filteredApplications.length && ` / ${applications.length}`}
                         </Badge>
                       </CardTitle>
                       <ExportButton />
@@ -459,24 +427,22 @@ export default function Index() {
               </TabsContent>
 
               {/* Insights Tab */}
-              <TabsContent value="insights" className="mt-6 animate-fade-in">
+              <TabsContent value="insights" className="mt-4 animate-fade-in">
                 {preferences?.career_insights_enabled && insights.length > 0 ? (
                   <CareerInsightsPanel insights={insights} />
                 ) : (
-                  <Card className="bg-white dark:bg-card border-0 shadow-md">
+                  <Card className="border border-border bg-card">
                     <CardContent className="py-12 text-center">
-                      <div className="rounded-full bg-muted p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <Sparkles className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-muted-foreground">Add more applications to unlock career insights.</p>
+                      <Sparkles className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">Add more applications to unlock insights</p>
                     </CardContent>
                   </Card>
                 )}
               </TabsContent>
 
               {/* Settings Tab */}
-              <TabsContent value="settings" className="mt-6 space-y-6 animate-fade-in">
-                <div className="grid gap-6 lg:grid-cols-2">
+              <TabsContent value="settings" className="mt-4 space-y-4 animate-fade-in">
+                <div className="grid gap-4 lg:grid-cols-2">
                   <PreferencesSection userId={user?.id} />
                   <ProfileSettings userId={user?.id} />
                 </div>
