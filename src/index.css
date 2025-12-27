@@ -135,10 +135,14 @@
 }
 
 /* Premium App Background - Animated Light Canvas */
+/* Professional Dashboard Background with Animated Gradient Canvas */
 .app-background {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  background: 
+    linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 40%, #F1F5F9 100%);
+  background-size: 100% 200%;
+  animation: dashboardGradientShift 40s ease-in-out infinite;
   overflow: hidden;
 }
 
@@ -146,39 +150,39 @@
 .app-background::before {
   content: '';
   position: absolute;
-  top: -5%;
-  left: -5%;
-  width: 45%;
-  height: 45%;
-  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.06) 0%, transparent 70%);
-  animation: appAmbientTopLeft 32s ease-in-out infinite;
+  top: -10%;
+  left: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.08) 0%, transparent 70%);
+  animation: accentTopLeft 35s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Center-right indigo accent */
+/* Right-center indigo accent */
 .app-background::after {
   content: '';
   position: absolute;
-  top: 25%;
-  right: -8%;
-  width: 40%;
-  height: 40%;
-  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
-  animation: appAmbientCenterRight 38s ease-in-out infinite;
+  top: 20%;
+  right: -10%;
+  width: 45%;
+  height: 50%;
+  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+  animation: accentRightCenter 42s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Bottom-left dark accent - via wrapper element */
+/* Bottom-left dark accent */
 .app-background > .app-depth-layer {
   position: absolute;
-  bottom: -8%;
-  left: 5%;
-  width: 35%;
-  height: 35%;
-  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.03) 0%, transparent 70%);
-  animation: appAmbientBottomLeft 28s ease-in-out infinite;
+  bottom: -10%;
+  left: -5%;
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.04) 0%, transparent 70%);
+  animation: accentBottomLeft 38s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
@@ -189,7 +193,7 @@
 }
 
 .dark .app-background::before {
-  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.12) 0%, transparent 70%);
 }
 
 .dark .app-background::after {
@@ -197,40 +201,50 @@
 }
 
 .dark .app-background > .app-depth-layer {
-  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.1) 0%, transparent 70%);
 }
 
-/* Ambient animations - extremely subtle, professional motion */
-@keyframes appAmbientTopLeft {
+/* Main gradient shift animation - barely noticeable */
+@keyframes dashboardGradientShift {
   0%, 100% {
-    opacity: 0.8;
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 0% 100%;
+  }
+}
+
+/* Accent animations - extremely subtle ambient motion */
+@keyframes accentTopLeft {
+  0%, 100% {
+    opacity: 0.85;
     transform: translate(0, 0) scale(1);
   }
   50% {
     opacity: 1;
-    transform: translate(2%, 1.5%) scale(1.04);
+    transform: translate(3%, 2%) scale(1.05);
   }
 }
 
-@keyframes appAmbientCenterRight {
+@keyframes accentRightCenter {
+  0%, 100% {
+    opacity: 0.75;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(-2%, 3%) scale(1.04);
+  }
+}
+
+@keyframes accentBottomLeft {
   0%, 100% {
     opacity: 0.7;
     transform: translate(0, 0) scale(1);
   }
   50% {
-    opacity: 0.95;
-    transform: translate(-1.5%, 2%) scale(1.03);
-  }
-}
-
-@keyframes appAmbientBottomLeft {
-  0%, 100% {
-    opacity: 0.6;
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: translate(1.5%, -1%) scale(1.03);
+    opacity: 0.9;
+    transform: translate(2%, -2%) scale(1.03);
   }
 }
 
