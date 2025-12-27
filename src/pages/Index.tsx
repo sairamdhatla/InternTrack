@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { 
   useApplications, 
   useApplicationAnalytics,
   useSmartSuggestions,
+  useSuggestionActions,
   ApplicationForm, 
   ApplicationList, 
   ApplicationAnalytics, 
@@ -20,6 +21,8 @@ import { ProfileSettings } from '@/features/profile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, LogOut, BarChart3, Bell, Crown, User, Lightbulb } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -38,13 +41,78 @@ export default function Index() {
 
   const { filters, setFilters, filteredApplications, platforms } = useApplicationFilters(applications);
   const { analytics } = useApplicationAnalytics();
+  const { dismissSuggestion, snoozeSuggestion, isHidden } = useSuggestionActions();
   
   // Smart suggestions based on applications and analytics
-  const { suggestions } = useSmartSuggestions({
+  const { suggestions: rawSuggestions } = useSmartSuggestions({
     applications,
     platformMetrics: analytics.platformMetrics,
     roleMetrics: analytics.roleMetrics,
   });
+  
+  // Filter out dismissed/snoozed suggestions
+  const suggestions = rawSuggestions.filter(s => !isHidden(s.id));
+
+  // Handler for adding a note to an application
+  const handleAddNote = useCallback(async (applicationId: string, note: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('application_notes')
+        .insert({
+          application_id: applicationId,
+          user_id: user.id,
+          content: note.trim()
+        });
+
+      if (error) throw error;
+      toast.success('Note added');
+      return true;
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast.error('Failed to add note');
+      return false;
+    }
+  }, []);
+
+  // Handler for marking an application as followed up
+  const handleMarkDone = useCallback(async (applicationId: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('follow_ups')
+        .insert({
+          application_id: applicationId,
+          user_id: user.id,
+          note: 'Marked as done from Smart Suggestions'
+        });
+
+      if (error) throw error;
+      
+      // Also touch the application to update the updated_at timestamp
+      await supabase
+        .from('applications')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', applicationId);
+      
+      toast.success('Marked as followed up');
+      return true;
+    } catch (error) {
+      console.error('Error marking as done:', error);
+      toast.error('Failed to mark as done');
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -118,7 +186,13 @@ export default function Index() {
                 Smart Suggestions
               </h2>
             </div>
-            <SmartSuggestionsPanel suggestions={suggestions} />
+            <SmartSuggestionsPanel 
+              suggestions={suggestions}
+              onDismiss={dismissSuggestion}
+              onSnooze={snoozeSuggestion}
+              onMarkDone={handleMarkDone}
+              onAddNote={handleAddNote}
+            />
           </section>
 
           {/* Analytics Section */}

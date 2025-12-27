@@ -1,6 +1,15 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Lightbulb, 
   AlertTriangle, 
@@ -9,13 +18,23 @@ import {
   TrendingUp, 
   Briefcase,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  MoreHorizontal,
+  X,
+  AlarmClockOff,
+  Check,
+  MessageSquarePlus,
+  Loader2,
 } from 'lucide-react';
 import type { SmartSuggestion, SuggestionType, SuggestionPriority } from '../hooks/useSmartSuggestions';
 
 interface SmartSuggestionsPanelProps {
   suggestions: SmartSuggestion[];
   onViewApplication?: (applicationId: string) => void;
+  onDismiss?: (suggestionId: string) => Promise<boolean>;
+  onSnooze?: (suggestionId: string, days: number) => Promise<boolean>;
+  onMarkDone?: (applicationId: string) => Promise<boolean>;
+  onAddNote?: (applicationId: string, note: string) => Promise<boolean>;
 }
 
 const ICON_MAP: Record<SuggestionType, React.ComponentType<{ className?: string }>> = {
@@ -49,7 +68,57 @@ const TYPE_LABELS: Record<SuggestionType, string> = {
   stale: 'Stale',
 };
 
-export function SmartSuggestionsPanel({ suggestions, onViewApplication }: SmartSuggestionsPanelProps) {
+export function SmartSuggestionsPanel({ 
+  suggestions, 
+  onViewApplication,
+  onDismiss,
+  onSnooze,
+  onMarkDone,
+  onAddNote,
+}: SmartSuggestionsPanelProps) {
+  const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
+  const [showNoteInput, setShowNoteInput] = useState<string | null>(null);
+  const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
+
+  const setLoading = (id: string, loading: boolean) => {
+    setLoadingActions(prev => ({ ...prev, [id]: loading }));
+  };
+
+  const handleDismiss = async (suggestionId: string) => {
+    if (!onDismiss) return;
+    setLoading(suggestionId, true);
+    await onDismiss(suggestionId);
+    setLoading(suggestionId, false);
+  };
+
+  const handleSnooze = async (suggestionId: string, days: number) => {
+    if (!onSnooze) return;
+    setLoading(suggestionId, true);
+    await onSnooze(suggestionId, days);
+    setLoading(suggestionId, false);
+  };
+
+  const handleMarkDone = async (applicationId: string, suggestionId: string) => {
+    if (!onMarkDone) return;
+    setLoading(suggestionId, true);
+    await onMarkDone(applicationId);
+    setLoading(suggestionId, false);
+  };
+
+  const handleAddNote = async (applicationId: string, suggestionId: string) => {
+    if (!onAddNote) return;
+    const note = noteInputs[suggestionId]?.trim();
+    if (!note) return;
+    
+    setLoading(suggestionId, true);
+    const success = await onAddNote(applicationId, note);
+    if (success) {
+      setNoteInputs(prev => ({ ...prev, [suggestionId]: '' }));
+      setShowNoteInput(null);
+    }
+    setLoading(suggestionId, false);
+  };
+
   if (suggestions.length === 0) {
     return (
       <Card>
@@ -84,6 +153,8 @@ export function SmartSuggestionsPanel({ suggestions, onViewApplication }: SmartS
         {suggestions.slice(0, 5).map((suggestion) => {
           const Icon = ICON_MAP[suggestion.type] || Info;
           const styles = PRIORITY_STYLES[suggestion.priority];
+          const isLoading = loadingActions[suggestion.id];
+          const hasApplication = !!suggestion.applicationId;
           
           return (
             <div 
@@ -107,17 +178,112 @@ export function SmartSuggestionsPanel({ suggestions, onViewApplication }: SmartS
                 <p className="text-sm text-foreground leading-relaxed">
                   {suggestion.message}
                 </p>
-                {suggestion.applicationId && onViewApplication && (
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    className="h-auto p-0 mt-1 text-xs"
-                    onClick={() => onViewApplication(suggestion.applicationId!)}
-                  >
-                    View application
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>
+                
+                {/* Note input */}
+                {showNoteInput === suggestion.id && hasApplication && (
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      placeholder="Add a quick note..."
+                      value={noteInputs[suggestion.id] || ''}
+                      onChange={(e) => setNoteInputs(prev => ({ ...prev, [suggestion.id]: e.target.value }))}
+                      className="h-8 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && suggestion.applicationId) {
+                          handleAddNote(suggestion.applicationId, suggestion.id);
+                        }
+                      }}
+                    />
+                    <Button 
+                      size="sm" 
+                      className="h-8"
+                      disabled={isLoading || !noteInputs[suggestion.id]?.trim()}
+                      onClick={() => suggestion.applicationId && handleAddNote(suggestion.applicationId, suggestion.id)}
+                    >
+                      {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Add'}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-8 px-2"
+                      onClick={() => setShowNoteInput(null)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 )}
+                
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 mt-2">
+                  {suggestion.applicationId && onViewApplication && (
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="h-auto p-0 text-xs"
+                      onClick={() => onViewApplication(suggestion.applicationId!)}
+                    >
+                      View
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </Button>
+                  )}
+                  
+                  {(onDismiss || onSnooze || onMarkDone || onAddNote) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0 ml-auto"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        {hasApplication && onMarkDone && (
+                          <DropdownMenuItem onClick={() => handleMarkDone(suggestion.applicationId!, suggestion.id)}>
+                            <Check className="h-4 w-4 mr-2" />
+                            Mark as done
+                          </DropdownMenuItem>
+                        )}
+                        {hasApplication && onAddNote && (
+                          <DropdownMenuItem onClick={() => setShowNoteInput(suggestion.id)}>
+                            <MessageSquarePlus className="h-4 w-4 mr-2" />
+                            Add quick note
+                          </DropdownMenuItem>
+                        )}
+                        {onSnooze && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleSnooze(suggestion.id, 3)}>
+                              <AlarmClockOff className="h-4 w-4 mr-2" />
+                              Snooze 3 days
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSnooze(suggestion.id, 7)}>
+                              <AlarmClockOff className="h-4 w-4 mr-2" />
+                              Snooze 7 days
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {onDismiss && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDismiss(suggestion.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Dismiss
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
               </div>
             </div>
           );
