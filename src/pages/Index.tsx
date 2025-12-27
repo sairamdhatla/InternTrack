@@ -186,7 +186,7 @@ export default function Index() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-background">
       {/* Header - Professional, minimal */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="container flex h-14 items-center justify-between">
