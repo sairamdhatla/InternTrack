@@ -1,13 +1,25 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useApplications, ApplicationForm, ApplicationList, ApplicationAnalytics, ApplicationFilters, useApplicationFilters, WeeklyProgressCard, ExportButton } from '@/features/applications';
+import { 
+  useApplications, 
+  useApplicationAnalytics,
+  useSmartSuggestions,
+  ApplicationForm, 
+  ApplicationList, 
+  ApplicationAnalytics, 
+  ApplicationFilters, 
+  useApplicationFilters, 
+  WeeklyProgressCard, 
+  ExportButton,
+  SmartSuggestionsPanel
+} from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { useSubscription } from '@/features/subscriptions';
 import { ProfileSettings } from '@/features/profile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, LogOut, BarChart3, Bell, Crown, User } from 'lucide-react';
+import { Briefcase, LogOut, BarChart3, Bell, Crown, User, Lightbulb } from 'lucide-react';
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -25,6 +37,14 @@ export default function Index() {
   } = useApplications(isPro);
 
   const { filters, setFilters, filteredApplications, platforms } = useApplicationFilters(applications);
+  const { analytics } = useApplicationAnalytics();
+  
+  // Smart suggestions based on applications and analytics
+  const { suggestions } = useSmartSuggestions({
+    applications,
+    platformMetrics: analytics.platformMetrics,
+    roleMetrics: analytics.roleMetrics,
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -88,6 +108,17 @@ export default function Index() {
           {/* Weekly Progress Section */}
           <section>
             <WeeklyProgressCard userId={user?.id} />
+          </section>
+
+          {/* Smart Suggestions Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="h-5 w-5 text-yellow-500" />
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Smart Suggestions
+              </h2>
+            </div>
+            <SmartSuggestionsPanel suggestions={suggestions} />
           </section>
 
           {/* Analytics Section */}
