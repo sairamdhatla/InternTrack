@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
-  Lightbulb, 
   AlertTriangle, 
   Info, 
   Clock, 
@@ -27,6 +26,7 @@ import {
   Loader2,
   Sparkles,
   Bot,
+  Wand2,
 } from 'lucide-react';
 import type { SmartSuggestion, SuggestionType, SuggestionPriority } from '../hooks/useSmartSuggestions';
 
@@ -47,21 +47,21 @@ const ICON_MAP: Record<SuggestionType, React.ComponentType<{ className?: string 
   stale: AlertTriangle,
 };
 
-const PRIORITY_STYLES: Record<SuggestionPriority, { badge: string; icon: string; glow: string }> = {
+const PRIORITY_STYLES: Record<SuggestionPriority, { badge: string; icon: string; border: string }> = {
   high: { 
     badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', 
     icon: 'text-rose-500',
-    glow: 'shadow-rose-500/10',
+    border: 'border-l-rose-500',
   },
   medium: { 
     badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', 
     icon: 'text-amber-500',
-    glow: 'shadow-amber-500/10',
+    border: 'border-l-amber-500',
   },
   low: { 
     badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', 
     icon: 'text-blue-500',
-    glow: 'shadow-blue-500/10',
+    border: 'border-l-blue-500',
   },
 };
 
@@ -70,7 +70,7 @@ const TYPE_LABELS: Record<SuggestionType, string> = {
   deadline: 'Deadline',
   platform_insight: 'Insight',
   role_insight: 'Insight',
-  stale: 'Stale',
+  stale: 'Action Needed',
 };
 
 export function SmartSuggestionsPanel({ 
@@ -126,23 +126,25 @@ export function SmartSuggestionsPanel({
 
   if (suggestions.length === 0) {
     return (
-      <Card className="ai-coach-card">
-        <CardHeader className="flex flex-row items-center gap-3 pb-2">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Bot className="h-5 w-5 text-primary" />
+      <Card className="bg-white dark:bg-card border-0 shadow-md overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#4F46E5]/5 to-transparent pointer-events-none" />
+        <CardHeader className="flex flex-row items-center gap-3 pb-2 relative">
+          <div className="p-2.5 rounded-xl bg-[#4F46E5]/10">
+            <Wand2 className="h-5 w-5 text-[#4F46E5]" />
           </div>
           <div>
             <CardTitle className="text-base font-display font-semibold">AI Career Coach</CardTitle>
             <p className="text-xs text-muted-foreground">Personalized guidance</p>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="rounded-full bg-primary/10 p-4 mb-4">
-              <Sparkles className="h-8 w-8 text-primary" />
+            <div className="rounded-full bg-[#4F46E5]/10 p-4 mb-4">
+              <Sparkles className="h-8 w-8 text-[#4F46E5]" />
             </div>
-            <p className="text-sm text-muted-foreground max-w-[200px]">
-              No suggestions right now. Keep tracking your applications!
+            <p className="text-sm font-medium text-foreground mb-1">You're all caught up!</p>
+            <p className="text-xs text-muted-foreground max-w-[200px]">
+              Keep tracking your applications for personalized tips.
             </p>
           </div>
         </CardContent>
@@ -151,20 +153,21 @@ export function SmartSuggestionsPanel({
   }
 
   return (
-    <Card className="ai-coach-card overflow-hidden">
-      <CardHeader className="flex flex-row items-center gap-3 pb-3">
-        <div className="p-2 rounded-xl bg-primary/10">
-          <Bot className="h-5 w-5 text-primary" />
+    <Card className="bg-white dark:bg-card border-0 shadow-md overflow-hidden relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#4F46E5]/5 to-transparent pointer-events-none" />
+      <CardHeader className="flex flex-row items-center gap-3 pb-3 relative">
+        <div className="p-2.5 rounded-xl bg-[#4F46E5]/10">
+          <Wand2 className="h-5 w-5 text-[#4F46E5]" />
         </div>
         <div className="flex-1">
           <CardTitle className="text-base font-display font-semibold">AI Career Coach</CardTitle>
           <p className="text-xs text-muted-foreground">Personalized guidance</p>
         </div>
-        <Badge className="bg-primary/10 text-primary border-primary/20 font-semibold">
+        <Badge className="bg-[#4F46E5] text-white border-0 font-semibold shadow-sm">
           {suggestions.length}
         </Badge>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 relative">
         {suggestions.slice(0, 4).map((suggestion, index) => {
           const Icon = ICON_MAP[suggestion.type] || Info;
           const styles = PRIORITY_STYLES[suggestion.priority];
@@ -174,7 +177,7 @@ export function SmartSuggestionsPanel({
           return (
             <div 
               key={suggestion.id}
-              className={`group flex items-start gap-3 p-3 rounded-xl bg-card border border-border/50 transition-all duration-200 hover:border-border hover:shadow-md ${styles.glow} animate-fade-in`}
+              className={`group flex items-start gap-3 p-4 rounded-xl bg-card border-l-4 ${styles.border} border border-border/50 shadow-sm transition-all duration-200 hover:shadow-md animate-fade-in`}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div className={`mt-0.5 p-2 rounded-lg ${styles.badge} transition-transform group-hover:scale-105`}>
@@ -186,9 +189,10 @@ export function SmartSuggestionsPanel({
                     {TYPE_LABELS[suggestion.type]}
                   </Badge>
                   {suggestion.priority === 'high' && (
-                    <Badge className="text-xs bg-rose-500 text-white border-0 animate-pulse-soft">
+                    <span className="flex items-center gap-1 text-xs text-rose-500 font-medium animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                       Urgent
-                    </Badge>
+                    </span>
                   )}
                 </div>
                 <p className="text-sm text-foreground leading-relaxed">
@@ -211,7 +215,7 @@ export function SmartSuggestionsPanel({
                     />
                     <Button 
                       size="sm" 
-                      className="h-9 btn-press"
+                      className="h-9 bg-[#4F46E5] hover:bg-[#4338CA]"
                       disabled={isLoading || !noteInputs[suggestion.id]?.trim()}
                       onClick={() => suggestion.applicationId && handleAddNote(suggestion.applicationId, suggestion.id)}
                     >
@@ -234,7 +238,7 @@ export function SmartSuggestionsPanel({
                     <Button 
                       variant="link" 
                       size="sm" 
-                      className="h-auto p-0 text-xs text-primary"
+                      className="h-auto p-0 text-xs text-[#4F46E5]"
                       onClick={() => onViewApplication(suggestion.applicationId!)}
                     >
                       View
