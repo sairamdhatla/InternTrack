@@ -15,9 +15,20 @@ export { AddNoteForm } from './components/AddNoteForm';
 export { ApplicationFilters } from './components/ApplicationFilters';
 export { WeeklyProgressCard } from './components/WeeklyProgressCard';
 export { ExportButton } from './components/ExportButton';
+export { InsightCards } from './components/InsightCards';
+export { ConversionChart } from './components/ConversionChart';
+export { TimeInStatusChart } from './components/TimeInStatusChart';
+export { PlatformChart } from './components/PlatformChart';
 export * from './utils/statusStateMachine';
 export type { Application, ApplicationInput, StatusTransitionResult } from './hooks/useApplications';
 export type { ApplicationFile } from './hooks/useApplicationFiles';
 export type { ApplicationNote } from './hooks/useApplicationNotes';
 export type { FilterState } from './components/ApplicationFilters';
 export type { WeeklyProgress } from './hooks/useWeeklyProgress';
+export type { 
+  ApplicationAnalytics as ApplicationAnalyticsData,
+  FunnelMetrics,
+  PlatformMetrics,
+  RoleMetrics,
+  TimeInStatusMetrics,
+} from './hooks/useApplicationAnalytics';
