@@ -12,6 +12,7 @@ export interface EventWithApplication {
   created_at: string;
   platform: string | null;
   role: string;
+  company: string;
 }
 
 export interface FunnelMetrics {
@@ -38,16 +39,41 @@ export interface RoleMetrics {
   conversionRate: number;
 }
 
+export interface CompanyMetrics {
+  company: string;
+  total: number;
+  currentStatus: string;
+  reachedInterview: boolean;
+  reachedOffer: boolean;
+  accepted: boolean;
+}
+
+export interface TimeInStatusMetrics {
+  status: string;
+  avgDays: number;
+  minDays: number;
+  maxDays: number;
+  count: number;
+}
+
 export interface ApplicationAnalytics {
   totalEvents: number;
+  totalApplications: number;
   conversionFunnel: FunnelMetrics[];
   platformMetrics: PlatformMetrics[];
   roleMetrics: RoleMetrics[];
+  companyMetrics: CompanyMetrics[];
+  timeInStatus: TimeInStatusMetrics[];
   outcomeRate: {
     accepted: number;
     rejected: number;
     pending: number;
+    acceptedCount: number;
+    rejectedCount: number;
+    pendingCount: number;
   };
+  responseRate: number;
+  avgTimeToResponse: number;
 }
 
 export function useApplicationAnalytics() {
@@ -57,7 +83,6 @@ export function useApplicationAnalytics() {
   const fetchEventsWithApplications = async () => {
     setLoading(true);
     
-    // Fetch events and join with applications to get platform and role
     const { data, error } = await supabase
       .from('application_events')
       .select(`
@@ -68,9 +93,9 @@ export function useApplicationAnalytics() {
         old_status,
         new_status,
         created_at,
-        applications!inner(platform, role)
+        applications!inner(platform, role, company, status)
       `)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (!error && data) {
       const enrichedEvents: EventWithApplication[] = data.map((event: any) => ({
@@ -83,6 +108,7 @@ export function useApplicationAnalytics() {
         created_at: event.created_at,
         platform: event.applications?.platform || null,
         role: event.applications?.role || 'Unknown',
+        company: event.applications?.company || 'Unknown',
       }));
       setEvents(enrichedEvents);
     }
@@ -97,6 +123,7 @@ export function useApplicationAnalytics() {
     if (!events.length) {
       return {
         totalEvents: 0,
+        totalApplications: 0,
         conversionFunnel: [
           { stage: 'Applied', count: 0, percentage: 0 },
           { stage: 'OA', count: 0, percentage: 0 },
@@ -106,25 +133,44 @@ export function useApplicationAnalytics() {
         ],
         platformMetrics: [],
         roleMetrics: [],
-        outcomeRate: { accepted: 0, rejected: 0, pending: 0 },
+        companyMetrics: [],
+        timeInStatus: [],
+        outcomeRate: { accepted: 0, rejected: 0, pending: 0, acceptedCount: 0, rejectedCount: 0, pendingCount: 0 },
+        responseRate: 0,
+        avgTimeToResponse: 0,
       };
     }
 
-    // Track stages reached per application with platform and role info
+    // Track stages reached per application with platform, role, and company info
     const applicationData = new Map<string, {
       stages: Set<ApplicationStatus>;
       platform: string | null;
       role: string;
+      company: string;
+      statusTransitions: { status: string; enteredAt: Date; exitedAt?: Date }[];
+      currentStatus: string;
+      createdAt: Date;
+      firstResponseAt?: Date;
     }>();
 
-    events.forEach((event) => {
+    // Sort events by created_at to process in order
+    const sortedEvents = [...events].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    sortedEvents.forEach((event) => {
       const appId = event.application_id;
+      const eventDate = new Date(event.created_at);
       
       if (!applicationData.has(appId)) {
         applicationData.set(appId, {
           stages: new Set(),
           platform: event.platform,
           role: event.role,
+          company: event.company,
+          statusTransitions: [],
+          currentStatus: 'Applied',
+          createdAt: eventDate,
         });
       }
 
@@ -132,10 +178,27 @@ export function useApplicationAnalytics() {
 
       if (event.event_type === 'created') {
         appInfo.stages.add('Applied');
+        appInfo.statusTransitions.push({ status: 'Applied', enteredAt: eventDate });
+        appInfo.currentStatus = 'Applied';
       }
 
       if (event.event_type === 'status_change' && event.new_status) {
         appInfo.stages.add(event.new_status as ApplicationStatus);
+        
+        // Close previous status transition
+        const lastTransition = appInfo.statusTransitions[appInfo.statusTransitions.length - 1];
+        if (lastTransition && !lastTransition.exitedAt) {
+          lastTransition.exitedAt = eventDate;
+        }
+        
+        // Start new status transition
+        appInfo.statusTransitions.push({ status: event.new_status, enteredAt: eventDate });
+        appInfo.currentStatus = event.new_status;
+
+        // Track first response (any status change from Applied)
+        if (event.old_status === 'Applied' && !appInfo.firstResponseAt) {
+          appInfo.firstResponseAt = eventDate;
+        }
       }
     });
 
@@ -175,6 +238,34 @@ export function useApplicationAnalytics() {
       { stage: 'Offer', count: offerCount, percentage: appliedCount > 0 ? Math.round((offerCount / appliedCount) * 100) : 0 },
       { stage: 'Accepted', count: acceptedCount, percentage: appliedCount > 0 ? Math.round((acceptedCount / appliedCount) * 100) : 0 },
     ];
+
+    // Calculate time-in-status metrics
+    const statusDurations = new Map<string, number[]>();
+    
+    applicationData.forEach(({ statusTransitions }) => {
+      statusTransitions.forEach((transition) => {
+        const endTime = transition.exitedAt || new Date();
+        const durationDays = Math.max(0, (endTime.getTime() - transition.enteredAt.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (!statusDurations.has(transition.status)) {
+          statusDurations.set(transition.status, []);
+        }
+        statusDurations.get(transition.status)!.push(durationDays);
+      });
+    });
+
+    const timeInStatus: TimeInStatusMetrics[] = Array.from(statusDurations.entries())
+      .map(([status, durations]) => ({
+        status,
+        avgDays: Math.round((durations.reduce((a, b) => a + b, 0) / durations.length) * 10) / 10,
+        minDays: Math.round(Math.min(...durations) * 10) / 10,
+        maxDays: Math.round(Math.max(...durations) * 10) / 10,
+        count: durations.length,
+      }))
+      .sort((a, b) => {
+        const order = ['Applied', 'OA', 'Interview', 'Offer', 'Accepted', 'Rejected'];
+        return order.indexOf(a.status) - order.indexOf(b.status);
+      });
 
     // Calculate platform metrics
     const platformGroups = new Map<string, {
@@ -252,18 +343,51 @@ export function useApplicationAnalytics() {
       }))
       .sort((a, b) => b.total - a.total);
 
+    // Calculate company metrics
+    const companyMetrics: CompanyMetrics[] = Array.from(applicationData.entries())
+      .map(([_, data]) => ({
+        company: data.company,
+        total: 1,
+        currentStatus: data.currentStatus,
+        reachedInterview: data.stages.has('Interview') || data.stages.has('Offer') || data.stages.has('Accepted'),
+        reachedOffer: data.stages.has('Offer') || data.stages.has('Accepted'),
+        accepted: data.stages.has('Accepted'),
+      }));
+
+    // Calculate response rate and avg time to response
+    let responseCount = 0;
+    let totalResponseTime = 0;
+
+    applicationData.forEach(({ createdAt, firstResponseAt }) => {
+      if (firstResponseAt) {
+        responseCount++;
+        totalResponseTime += (firstResponseAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      }
+    });
+
+    const responseRate = totalApplications > 0 ? Math.round((responseCount / totalApplications) * 100) : 0;
+    const avgTimeToResponse = responseCount > 0 ? Math.round((totalResponseTime / responseCount) * 10) / 10 : 0;
+
     const pending = totalApplications - acceptedCount - rejectedCount;
 
     return {
       totalEvents: events.length,
+      totalApplications,
       conversionFunnel,
       platformMetrics,
       roleMetrics,
+      companyMetrics,
+      timeInStatus,
       outcomeRate: {
         accepted: totalApplications > 0 ? Math.round((acceptedCount / totalApplications) * 100) : 0,
         rejected: totalApplications > 0 ? Math.round((rejectedCount / totalApplications) * 100) : 0,
         pending: totalApplications > 0 ? Math.round((pending / totalApplications) * 100) : 0,
+        acceptedCount,
+        rejectedCount,
+        pendingCount: pending,
       },
+      responseRate,
+      avgTimeToResponse,
     };
   }, [events]);
 
