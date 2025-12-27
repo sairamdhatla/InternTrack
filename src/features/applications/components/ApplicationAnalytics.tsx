@@ -1,5 +1,4 @@
 import { useApplicationAnalytics } from '../hooks/useApplicationAnalytics';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConversionChart } from './ConversionChart';
 import { TimeInStatusChart } from './TimeInStatusChart';
@@ -24,8 +23,8 @@ export function ApplicationAnalytics({ activeTab = 'funnel' }: ApplicationAnalyt
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-[300px] rounded-xl" />
+      <div className="space-y-4">
+        <Skeleton className="h-[280px] rounded-lg" />
       </div>
     );
   }
@@ -44,11 +43,9 @@ export function ApplicationAnalytics({ activeTab = 'funnel' }: ApplicationAnalyt
 
   if (totalEvents === 0) {
     return (
-      <div className="py-12 text-center">
-        <div className="rounded-full bg-muted p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-          <BarChart3 className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <p className="text-muted-foreground">No analytics data yet. Start tracking applications to see insights.</p>
+      <div className="py-10 text-center">
+        <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">No data yet. Start tracking to see analytics.</p>
       </div>
     );
   }
@@ -56,16 +53,16 @@ export function ApplicationAnalytics({ activeTab = 'funnel' }: ApplicationAnalyt
   // Render based on active tab
   if (activeTab === 'funnel') {
     return (
-      <div className="space-y-6">
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Conversion Insight</span>
+      <div className="space-y-4">
+        <div className="p-3 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">Conversion</span>
           </div>
           <p className="text-sm text-muted-foreground">
             {outcomeRate.acceptedCount > 0 
-              ? `You've converted ${outcomeRate.accepted}% of applications to offers. ${outcomeRate.accepted >= 10 ? 'Great job!' : 'Keep applying!'}`
-              : `${responseRate}% of your applications received responses. Keep following up on pending ones.`
+              ? `${outcomeRate.accepted}% of applications converted to offers.`
+              : `${responseRate}% of applications received responses.`
             }
           </p>
         </div>
@@ -76,56 +73,56 @@ export function ApplicationAnalytics({ activeTab = 'funnel' }: ApplicationAnalyt
 
   if (activeTab === 'platforms') {
     return (
-      <div className="space-y-6">
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-          <div className="flex items-center gap-2 mb-2">
-            <Briefcase className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Platform Insight</span>
+      <div className="space-y-4">
+        <div className="p-3 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">Platform Performance</span>
           </div>
           <p className="text-sm text-muted-foreground">
             {platformMetrics.length > 0 
-              ? `You're most active on ${platformMetrics[0].platform} with ${platformMetrics[0].total} applications.`
-              : 'Add platform information to your applications to see platform performance.'
+              ? `Most active on ${platformMetrics[0].platform} with ${platformMetrics[0].total} applications.`
+              : 'Add platform info to see performance data.'
             }
           </p>
         </div>
         {platformMetrics.length > 0 ? (
           <PlatformChart data={platformMetrics} />
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            No platform data available yet.
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No platform data available.
           </div>
         )}
         
         {/* Role Performance Table */}
         {roleMetrics.length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
+          <div className="mt-4">
+            <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Briefcase className="h-3.5 w-3.5" />
               Role Performance
             </h4>
-            <div className="rounded-xl border border-border overflow-hidden">
+            <div className="rounded-lg border border-border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="font-semibold">Role</TableHead>
-                    <TableHead className="text-right font-semibold">Apps</TableHead>
-                    <TableHead className="text-right font-semibold">Interviews</TableHead>
-                    <TableHead className="text-right font-semibold">Offers</TableHead>
+                    <TableHead className="text-xs font-medium">Role</TableHead>
+                    <TableHead className="text-right text-xs font-medium">Apps</TableHead>
+                    <TableHead className="text-right text-xs font-medium">Interviews</TableHead>
+                    <TableHead className="text-right text-xs font-medium">Offers</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {roleMetrics.slice(0, 5).map((item) => (
                     <TableRow key={item.role} className="hover:bg-muted/20">
-                      <TableCell className="font-medium">{item.role}</TableCell>
-                      <TableCell className="text-right tabular-nums">{item.total}</TableCell>
+                      <TableCell className="text-sm">{item.role}</TableCell>
+                      <TableCell className="text-right tabular-nums text-sm">{item.total}</TableCell>
                       <TableCell className="text-right">
-                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
+                        <Badge variant="secondary" className="text-xs">
                           {item.reachedInterview}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                        <Badge variant="secondary" className="text-xs">
                           {item.reachedOffer}
                         </Badge>
                       </TableCell>
@@ -142,16 +139,16 @@ export function ApplicationAnalytics({ activeTab = 'funnel' }: ApplicationAnalyt
 
   if (activeTab === 'timeline') {
     return (
-      <div className="space-y-6">
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Timeline Insight</span>
+      <div className="space-y-4">
+        <div className="p-3 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">Response Time</span>
           </div>
           <p className="text-sm text-muted-foreground">
             {avgTimeToResponse > 0 
-              ? `On average, companies respond within ${avgTimeToResponse} days. ${avgTimeToResponse <= 7 ? 'That\'s quick!' : 'Be patient and follow up after 2 weeks.'}`
-              : 'Track more applications to see your average response time.'
+              ? `Average response time: ${avgTimeToResponse} days.`
+              : 'Track more applications to see response times.'
             }
           </p>
         </div>
@@ -160,9 +157,9 @@ export function ApplicationAnalytics({ activeTab = 'funnel' }: ApplicationAnalyt
     );
   }
 
-  // Default: show all
+  // Default: show funnel
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ConversionChart data={conversionFunnel} />
     </div>
   );
