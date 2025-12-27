@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, RefreshCw, Calendar, Send, Clock } from 'lucide-react';
+import { TrendingUp, RefreshCw, Calendar, Send, Clock, Zap } from 'lucide-react';
 import { useWeeklyProgress } from '../hooks/useWeeklyProgress';
 
 interface WeeklyProgressCardProps {
@@ -12,42 +12,52 @@ export function WeeklyProgressCard({ userId }: WeeklyProgressCardProps) {
 
   const stats = [
     {
-      label: 'Applications Added',
+      label: 'Apps Added',
       value: progress.applicationsAdded,
       icon: TrendingUp,
+      color: 'text-primary',
+      bg: 'bg-primary/10',
     },
     {
-      label: 'Status Changes',
+      label: 'Status Updates',
       value: progress.statusChanges,
       icon: RefreshCw,
+      color: 'text-blue-500',
+      bg: 'bg-blue-500/10',
     },
     {
-      label: 'Interviews Scheduled',
+      label: 'Interviews',
       value: progress.interviewsScheduled,
       icon: Calendar,
+      color: 'text-purple-500',
+      bg: 'bg-purple-500/10',
     },
     {
-      label: 'Follow-ups Sent',
+      label: 'Follow-ups',
       value: progress.followUpsSent,
       icon: Send,
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
     },
     {
-      label: 'Upcoming Deadlines',
+      label: 'Deadlines',
       value: progress.upcomingDeadlines,
       icon: Clock,
+      color: 'text-rose-500',
+      bg: 'bg-rose-500/10',
     },
   ];
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
           <Skeleton className="h-6 w-48" />
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
             ))}
           </div>
         </CardContent>
@@ -56,26 +66,31 @@ export function WeeklyProgressCard({ userId }: WeeklyProgressCardProps) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-display flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          Your Weekly Progress
+    <Card className="overflow-hidden border-border/50">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent">
+        <CardTitle className="flex items-center gap-2 text-lg font-display">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Zap className="h-4 w-4 text-primary" />
+          </div>
+          <span>Weekly Activity</span>
+          <span className="text-sm font-normal text-muted-foreground ml-auto">Last 7 days</span>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">Last 7 days activity</p>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          {stats.map((stat) => (
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {stats.map((stat, index) => (
             <div
               key={stat.label}
-              className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/50 border border-border"
+              className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-card border border-border/50 transition-all duration-300 hover:border-border hover:shadow-card-hover hover:-translate-y-0.5"
+              style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <stat.icon className="h-4 w-4 text-muted-foreground mb-1" />
-              <span className="text-2xl font-bold text-foreground">
+              <div className={`p-2 rounded-lg ${stat.bg} mb-2 transition-transform group-hover:scale-110`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+              <span className={`text-2xl font-bold font-display tabular-nums ${stat.color} animate-count-up`}>
                 {stat.value}
               </span>
-              <span className="text-xs text-muted-foreground text-center">
+              <span className="text-xs text-muted-foreground text-center mt-1 font-medium">
                 {stat.label}
               </span>
             </div>
