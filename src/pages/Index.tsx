@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { 
@@ -19,10 +19,10 @@ import {
 } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { useSubscription } from '@/features/subscriptions';
-import { ProfileSettings } from '@/features/profile';
+import { ProfileSettings, PreferencesSection, useUserPreferences } from '@/features/profile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, LogOut, BarChart3, Bell, Crown, User, Lightbulb, Brain } from 'lucide-react';
+import { Briefcase, LogOut, BarChart3, Bell, Crown, User, Lightbulb, Brain, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -43,20 +43,50 @@ export default function Index() {
 
   const { filters, setFilters, filteredApplications, platforms } = useApplicationFilters(applications);
   const { analytics } = useApplicationAnalytics();
+  const { preferences, loading: prefsLoading } = useUserPreferences(user?.id);
   const { dismissSuggestion, snoozeSuggestion, isHidden } = useSuggestionActions();
   
-  // Smart suggestions based on applications and analytics
-  const { suggestions: rawSuggestions } = useSmartSuggestions({
-    applications,
-    platformMetrics: analytics.platformMetrics,
-    roleMetrics: analytics.roleMetrics,
-  });
+  // Smart suggestions based on applications and analytics - only compute if enabled
+  const { suggestions: rawSuggestions } = useSmartSuggestions(
+    preferences?.smart_suggestions_enabled ? {
+      applications,
+      platformMetrics: analytics.platformMetrics,
+      roleMetrics: analytics.roleMetrics,
+    } : { applications: [], platformMetrics: [], roleMetrics: [] }
+  );
   
-  // Filter out dismissed/snoozed suggestions
-  const suggestions = rawSuggestions.filter(s => !isHidden(s.id));
+  // Filter suggestions based on preferences and dismissed/snoozed state
+  const suggestions = useMemo(() => {
+    if (!preferences?.smart_suggestions_enabled) return [];
+    
+    return rawSuggestions.filter(s => {
+      if (isHidden(s.id)) return false;
+      
+      // Filter based on suggestion type preferences
+      if (s.type === 'follow_up' && !preferences.follow_up_suggestions_enabled) return false;
+      if ((s.type === 'platform_insight' || s.type === 'role_insight') && !preferences.insight_suggestions_enabled) return false;
+      
+      return true;
+    });
+  }, [rawSuggestions, preferences, isHidden]);
   
-  // Career insights based on analytics
-  const { insights } = useCareerInsights({ analytics });
+  // Career insights based on analytics - only compute if enabled
+  const emptyAnalytics: typeof analytics = {
+    totalEvents: 0,
+    totalApplications: 0,
+    conversionFunnel: [],
+    platformMetrics: [],
+    roleMetrics: [],
+    companyMetrics: [],
+    timeInStatus: [],
+    outcomeRate: { accepted: 0, rejected: 0, pending: 0, acceptedCount: 0, rejectedCount: 0, pendingCount: 0 },
+    responseRate: 0,
+    avgTimeToResponse: 0,
+  };
+  
+  const { insights } = useCareerInsights(
+    preferences?.career_insights_enabled ? { analytics } : { analytics: emptyAnalytics }
+  );
 
   // Handler for adding a note to an application
   const handleAddNote = useCallback(async (applicationId: string, note: string): Promise<boolean> => {
@@ -183,33 +213,37 @@ export default function Index() {
             <WeeklyProgressCard userId={user?.id} />
           </section>
 
-          {/* Smart Suggestions Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="h-5 w-5 text-yellow-500" />
-              <h2 className="text-xl font-display font-semibold text-foreground">
-                Smart Suggestions
-              </h2>
-            </div>
-            <SmartSuggestionsPanel 
-              suggestions={suggestions}
-              onDismiss={dismissSuggestion}
-              onSnooze={snoozeSuggestion}
-              onMarkDone={handleMarkDone}
-              onAddNote={handleAddNote}
-            />
-          </section>
+          {/* Smart Suggestions Section - only show if enabled */}
+          {preferences?.smart_suggestions_enabled && suggestions.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="h-5 w-5 text-yellow-500" />
+                <h2 className="text-xl font-display font-semibold text-foreground">
+                  Smart Suggestions
+                </h2>
+              </div>
+              <SmartSuggestionsPanel 
+                suggestions={suggestions}
+                onDismiss={dismissSuggestion}
+                onSnooze={snoozeSuggestion}
+                onMarkDone={handleMarkDone}
+                onAddNote={handleAddNote}
+              />
+            </section>
+          )}
 
-          {/* Career Insights Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Brain className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-display font-semibold text-foreground">
-                Career Insights
-              </h2>
-            </div>
-            <CareerInsightsPanel insights={insights} />
-          </section>
+          {/* Career Insights Section - only show if enabled */}
+          {preferences?.career_insights_enabled && insights.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Brain className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-display font-semibold text-foreground">
+                  Career Insights
+                </h2>
+              </div>
+              <CareerInsightsPanel insights={insights} />
+            </section>
+          )}
 
           {/* Analytics Section */}
           <section>
@@ -259,6 +293,17 @@ export default function Index() {
               </h2>
             </div>
             <NotificationList userId={user?.id} />
+          </section>
+
+          {/* Preferences Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Settings className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Preferences
+              </h2>
+            </div>
+            <PreferencesSection userId={user?.id} />
           </section>
 
           {/* Profile Settings Section */}
