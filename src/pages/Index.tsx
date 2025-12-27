@@ -6,6 +6,7 @@ import {
   useApplicationAnalytics,
   useSmartSuggestions,
   useSuggestionActions,
+  useCareerInsights,
   ApplicationForm, 
   ApplicationList, 
   ApplicationAnalytics, 
@@ -13,14 +14,15 @@ import {
   useApplicationFilters, 
   WeeklyProgressCard, 
   ExportButton,
-  SmartSuggestionsPanel
+  SmartSuggestionsPanel,
+  CareerInsightsPanel
 } from '@/features/applications';
 import { NotificationList } from '@/features/notifications';
 import { useSubscription } from '@/features/subscriptions';
 import { ProfileSettings } from '@/features/profile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, LogOut, BarChart3, Bell, Crown, User, Lightbulb } from 'lucide-react';
+import { Briefcase, LogOut, BarChart3, Bell, Crown, User, Lightbulb, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -52,6 +54,9 @@ export default function Index() {
   
   // Filter out dismissed/snoozed suggestions
   const suggestions = rawSuggestions.filter(s => !isHidden(s.id));
+  
+  // Career insights based on analytics
+  const { insights } = useCareerInsights({ analytics });
 
   // Handler for adding a note to an application
   const handleAddNote = useCallback(async (applicationId: string, note: string): Promise<boolean> => {
@@ -193,6 +198,17 @@ export default function Index() {
               onMarkDone={handleMarkDone}
               onAddNote={handleAddNote}
             />
+          </section>
+
+          {/* Career Insights Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-display font-semibold text-foreground">
+                Career Insights
+              </h2>
+            </div>
+            <CareerInsightsPanel insights={insights} />
           </section>
 
           {/* Analytics Section */}
