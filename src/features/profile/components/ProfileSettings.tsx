@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,10 +19,12 @@ export function ProfileSettings({ userId }: ProfileSettingsProps) {
   const [saving, setSaving] = useState(false);
 
   // Sync local state when profile loads
-  if (profile && username === '' && displayName === '') {
-    setUsername(profile.username || '');
-    setDisplayName(profile.display_name || '');
-  }
+  useEffect(() => {
+    if (profile) {
+      setUsername(profile.username || '');
+      setDisplayName(profile.display_name || '');
+    }
+  }, [profile]);
 
   const handleSave = async () => {
     setSaving(true);
