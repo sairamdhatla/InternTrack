@@ -134,117 +134,139 @@
   }
 }
 
-/* Premium App Background - Animated Light Canvas */
-/* Professional Dashboard Background with Animated Gradient Canvas */
+/* Premium Dashboard Background - Visible Animated Gradient Canvas */
 .app-background {
   position: relative;
   min-height: 100vh;
   background: 
-    linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 40%, #F1F5F9 100%);
-  background-size: 100% 200%;
+    /* Base gradient - clearly visible */
+    linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 35%, #F1F5F9 100%),
+    /* Top-left indigo radial accent */
+    radial-gradient(ellipse 80% 80% at 10% 10%, rgba(79, 70, 229, 0.10) 0%, transparent 60%),
+    /* Right-upper indigo accent */
+    radial-gradient(ellipse 70% 70% at 90% 25%, rgba(99, 102, 241, 0.08) 0%, transparent 55%),
+    /* Bottom-left dark accent */
+    radial-gradient(ellipse 60% 60% at 15% 90%, rgba(15, 23, 42, 0.06) 0%, transparent 50%);
+  background-size: 100% 200%, 150% 150%, 140% 140%, 130% 130%;
+  background-position: 0% 0%, 0% 0%, 100% 0%, 0% 100%;
   animation: dashboardGradientShift 40s ease-in-out infinite;
   overflow: hidden;
 }
 
-/* Top-left indigo accent */
+/* Animated overlay for additional depth movement */
 .app-background::before {
   content: '';
   position: absolute;
-  top: -10%;
-  left: -10%;
-  width: 50%;
-  height: 50%;
-  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.08) 0%, transparent 70%);
-  animation: accentTopLeft 35s ease-in-out infinite;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 100% 100% at 20% 10%, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 80% at 85% 30%, rgba(99, 102, 241, 0.06) 0%, transparent 45%);
+  background-size: 180% 180%, 160% 160%;
+  animation: accentOverlay 35s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Right-center indigo accent */
+/* Secondary animated layer for subtle motion */
 .app-background::after {
   content: '';
   position: absolute;
-  top: 20%;
-  right: -10%;
-  width: 45%;
-  height: 50%;
-  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
-  animation: accentRightCenter 42s ease-in-out infinite;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 70% 70% at 5% 85%, rgba(15, 23, 42, 0.05) 0%, transparent 45%),
+    radial-gradient(ellipse 60% 60% at 95% 80%, rgba(99, 102, 241, 0.04) 0%, transparent 40%);
+  background-size: 150% 150%, 140% 140%;
+  animation: accentSecondary 42s ease-in-out infinite reverse;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Bottom-left dark accent */
+/* Extra depth layer element */
 .app-background > .app-depth-layer {
   position: absolute;
-  bottom: -10%;
-  left: -5%;
-  width: 40%;
-  height: 40%;
-  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.04) 0%, transparent 70%);
-  animation: accentBottomLeft 38s ease-in-out infinite;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 90% 90% at 50% 0%, rgba(79, 70, 229, 0.03) 0%, transparent 40%);
+  animation: accentDepth 38s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
 
 /* Dark mode adaptations */
 .dark .app-background {
-  background: linear-gradient(180deg, hsl(220, 14%, 8%) 0%, hsl(220, 14%, 6%) 100%);
+  background: 
+    linear-gradient(180deg, hsl(220, 14%, 8%) 0%, hsl(220, 14%, 6%) 50%, hsl(220, 14%, 8%) 100%),
+    radial-gradient(ellipse 80% 80% at 10% 10%, rgba(79, 70, 229, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 70% at 90% 25%, rgba(99, 102, 241, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 60% at 15% 90%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
 }
 
 .dark .app-background::before {
-  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.12) 0%, transparent 70%);
+  background: 
+    radial-gradient(ellipse 100% 100% at 20% 10%, rgba(79, 70, 229, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 80% at 85% 30%, rgba(99, 102, 241, 0.10) 0%, transparent 45%);
 }
 
 .dark .app-background::after {
-  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  background: 
+    radial-gradient(ellipse 70% 70% at 5% 85%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse 60% 60% at 95% 80%, rgba(79, 70, 229, 0.06) 0%, transparent 40%);
 }
 
 .dark .app-background > .app-depth-layer {
-  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.1) 0%, transparent 70%);
+  background: 
+    radial-gradient(ellipse 90% 90% at 50% 0%, rgba(79, 70, 229, 0.06) 0%, transparent 40%);
 }
 
-/* Main gradient shift animation - barely noticeable */
+/* Main gradient shift animation - noticeable smooth motion */
 @keyframes dashboardGradientShift {
   0%, 100% {
-    background-position: 0% 0%;
+    background-position: 0% 0%, 0% 0%, 100% 0%, 0% 100%;
+  }
+  25% {
+    background-position: 0% 50%, 10% 10%, 90% 10%, 10% 90%;
   }
   50% {
-    background-position: 0% 100%;
+    background-position: 0% 100%, 20% 20%, 80% 20%, 20% 80%;
+  }
+  75% {
+    background-position: 0% 50%, 10% 10%, 90% 10%, 10% 90%;
   }
 }
 
-/* Accent animations - extremely subtle ambient motion */
-@keyframes accentTopLeft {
+/* Overlay accent animation */
+@keyframes accentOverlay {
   0%, 100% {
+    background-position: 0% 0%, 100% 0%;
+    opacity: 0.9;
+  }
+  50% {
+    background-position: 10% 10%, 90% 10%;
+    opacity: 1;
+  }
+}
+
+/* Secondary layer animation */
+@keyframes accentSecondary {
+  0%, 100% {
+    background-position: 0% 100%, 100% 100%;
     opacity: 0.85;
-    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    background-position: 10% 90%, 90% 90%;
+    opacity: 1;
+  }
+}
+
+/* Depth layer animation */
+@keyframes accentDepth {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: translate(3%, 2%) scale(1.05);
-  }
-}
-
-@keyframes accentRightCenter {
-  0%, 100% {
-    opacity: 0.75;
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    opacity: 0.95;
-    transform: translate(-2%, 3%) scale(1.04);
-  }
-}
-
-@keyframes accentBottomLeft {
-  0%, 100% {
-    opacity: 0.7;
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    opacity: 0.9;
-    transform: translate(2%, -2%) scale(1.03);
+    transform: scale(1.02);
   }
 }
 
